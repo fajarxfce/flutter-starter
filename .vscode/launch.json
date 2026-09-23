@@ -2,6 +2,51 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug | dev | Android via SSH tunnel",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "dev",
+        "--dart-define=FLAVOR=dev",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "127.0.0.1:15555"
+    },
+    {
+      "name": "Debug | staging | Android via SSH tunnel",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "staging",
+        "--dart-define=FLAVOR=staging",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "127.0.0.1:15555"
+    },
+    {
+      "name": "Debug | prod | Android via SSH tunnel",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "prod",
+        "--dart-define=FLAVOR=prod",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "127.0.0.1:15555"
+    },
+    {
       "name": "Debug | dev | Android",
       "type": "dart",
       "request": "launch",

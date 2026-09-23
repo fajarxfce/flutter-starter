@@ -1,5 +1,56 @@
 [
   {
+    "label": "Debug | dev | Android via SSH tunnel",
+    "adapter": "Dart",
+    "type": "flutter",
+    "request": "launch",
+    "cwd": "$ZED_WORKTREE_ROOT/apps/fluent_starter",
+    "program": "$ZED_WORKTREE_ROOT/apps/fluent_starter/lib/main.dart",
+    "flutterMode": "debug",
+    "toolArgs": [
+      "--flavor",
+      "dev",
+      "--dart-define=FLAVOR=dev",
+      "--dart-define=BACKEND=demo",
+      "-d",
+      "127.0.0.1:15555"
+    ]
+  },
+  {
+    "label": "Debug | staging | Android via SSH tunnel",
+    "adapter": "Dart",
+    "type": "flutter",
+    "request": "launch",
+    "cwd": "$ZED_WORKTREE_ROOT/apps/fluent_starter",
+    "program": "$ZED_WORKTREE_ROOT/apps/fluent_starter/lib/main.dart",
+    "flutterMode": "debug",
+    "toolArgs": [
+      "--flavor",
+      "staging",
+      "--dart-define=FLAVOR=staging",
+      "--dart-define=BACKEND=demo",
+      "-d",
+      "127.0.0.1:15555"
+    ]
+  },
+  {
+    "label": "Debug | prod | Android via SSH tunnel",
+    "adapter": "Dart",
+    "type": "flutter",
+    "request": "launch",
+    "cwd": "$ZED_WORKTREE_ROOT/apps/fluent_starter",
+    "program": "$ZED_WORKTREE_ROOT/apps/fluent_starter/lib/main.dart",
+    "flutterMode": "debug",
+    "toolArgs": [
+      "--flavor",
+      "prod",
+      "--dart-define=FLAVOR=prod",
+      "--dart-define=BACKEND=demo",
+      "-d",
+      "127.0.0.1:15555"
+    ]
+  },
+  {
     "label": "Debug | dev | Android emulator",
     "adapter": "Dart",
     "type": "flutter",

@@ -4,6 +4,8 @@ Open the **repository root**, not only `apps/fluent_starter`. Both editors use F
 
 All flavor presets use the **demo backend**, including `prod` and release builds. Native launches pass both `--flavor` and `FLAVOR`; web launches pass only Dart defines. Build/run tasks use the existing `tool/app.dart` wrapper.
 
+For a project opened over SSH, connect the phone to ADB on the server first. See [Android debugging from a VPS](android-remote.md) for Wireless debugging, reverse SSH tunnels, and WireGuard. Both editors provide `Debug | dev/staging/prod | Android via SSH tunnel` presets targeting `127.0.0.1:15555` on the server.
+
 ## VS Code
 
 Install the recommended Dart and Flutter extensions when prompted.

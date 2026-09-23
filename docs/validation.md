@@ -1,6 +1,14 @@
 # Validation record
 
-Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
+Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
+
+## Android remote debugging
+
+- Added dev/staging/prod tunnel debug presets to both editors, targeting the VPS's `127.0.0.1:15555` ADB transport. Documented Android Wireless debugging through a laptop SSH tunnel, distinct pairing/connection ports, reconnecting, and direct WireGuard access when the phone itself is reachable through the VPN.
+- Parsed all seven editor JSON files. All 23 Zed and 19 VS Code launch/attach configurations passed their debugger schemas; the six new presets have matching flavors, device IDs, demo backend flags, and valid program paths. OpenSSH's configuration-only `ssh -G` check confirmed the documented loopback forwards and connection options.
+- `dart run tool/app.dart build android dev --smoke`: passed. APK metadata confirms `dev.example.fluentstarter.dev`, a debuggable build, minimum SDK 24, and target SDK 36. The build emitted an Android SDK XML-version warning but completed successfully. Generated sources and dependency lockfiles remained unchanged.
+
+No Android phone was connected to ADB on the VPS. Device pairing, tunnel connectivity, installation, and the editor debug session therefore remain unverified on a physical phone. This configuration/documentation change did not rerun the Dart test suite; its latest full result is recorded below.
 
 ## Editor workflows
 
