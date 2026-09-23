@@ -8,32 +8,17 @@ final class LocalSettingsRepository implements SettingsRepository {
   final PreferenceStore _preferences;
 
   @override
-  Future<Result<AppThemeMode>> loadTheme() async {
-    try {
-      final saved = await _preferences.read('theme');
-      return Success(
-        AppThemeMode.values.where((mode) => mode.name == saved).firstOrNull ??
-            AppThemeMode.system,
-      );
-    } on Object {
-      return const FailureResult(
-        Failure(FailureKind.storage, 'Unable to load appearance preferences.'),
-      );
-    }
-  }
+  Future<Result<AppThemeMode>> loadTheme() => safeStorageCall(() async {
+    final saved = await _preferences.read('theme');
+    return AppThemeMode.values
+            .where((mode) => mode.name == saved)
+            .firstOrNull ??
+        AppThemeMode.system;
+  }, message: 'Unable to load appearance preferences.');
 
   @override
-  Future<Result<void>> saveTheme(AppThemeMode mode) async {
-    try {
-      await _preferences.write('theme', mode.name);
-      return const Success(null);
-    } on Object {
-      return const FailureResult(
-        Failure(
-          FailureKind.storage,
-          'Appearance changed for this session, but could not be saved.',
-        ),
-      );
-    }
-  }
+  Future<Result<void>> saveTheme(AppThemeMode mode) => safeStorageCall(
+    () => _preferences.write('theme', mode.name),
+    message: 'Appearance changed for this session, but could not be saved.',
+  );
 }

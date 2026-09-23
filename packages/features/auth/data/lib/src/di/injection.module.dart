@@ -16,6 +16,7 @@ import 'package:auth_data/src/repositories/remote_auth_repository.dart'
     as _i168;
 import 'package:auth_domain/auth_domain.dart' as _i470;
 import 'package:core_common/core_common.dart' as _i699;
+import 'package:core_network/core_network.dart' as _i309;
 import 'package:dio/dio.dart' as _i361;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -38,6 +39,7 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
       () => _i168.RemoteAuthRepository(
         gh<_i471.AuthRemoteDataSource>(),
         gh<_i699.CredentialStore>(),
+        gh<_i309.SafeApiCall>(),
       ),
       dispose: _i570.disposeAuthRepository,
     );

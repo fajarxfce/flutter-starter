@@ -21,9 +21,13 @@ class _AuthApi implements AuthApi {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<LoginResponse> login(LoginRequest request) async {
+  Future<LoginResponse> login(
+    LoginRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
@@ -34,6 +38,7 @@ class _AuthApi implements AuthApi {
             '/auth/login',
             queryParameters: queryParameters,
             data: _data,
+            cancelToken: cancelToken,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
@@ -49,9 +54,10 @@ class _AuthApi implements AuthApi {
   }
 
   @override
-  Future<UserDto> me() async {
+  Future<UserDto> me({CancelToken? cancelToken}) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<UserDto>(
@@ -61,6 +67,7 @@ class _AuthApi implements AuthApi {
             '/auth/me',
             queryParameters: queryParameters,
             data: _data,
+            cancelToken: cancelToken,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );

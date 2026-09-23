@@ -1,11 +1,12 @@
 import 'package:auth_data/src/repositories/remote_auth_repository.dart';
 import 'package:auth_domain/auth_domain.dart';
 import 'package:core_common/core_common.dart';
+import 'package:core_network/core_network.dart';
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
 @InjectableInit.microPackage(
-  ignoreUnregisteredTypes: [Dio, CredentialStore],
+  ignoreUnregisteredTypes: [Dio, CredentialStore, SafeApiCall],
   throwOnMissingDependencies: true,
 )
 void configureAuthDataPackage() {}

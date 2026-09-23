@@ -4,7 +4,6 @@ import 'package:auth_data/src/datasources/remote/auth_remote_data_source.dart';
 import 'package:auth_data/src/di/injection.dart';
 import 'package:auth_data/src/mappers/user_mapper.dart';
 import 'package:auth_data/src/requests/login_request.dart';
-import 'package:auth_data/src/responses/login_response.dart';
 import 'package:auth_domain/auth_domain.dart';
 import 'package:core_common/core_common.dart';
 import 'package:core_network/core_network.dart';
@@ -12,9 +11,10 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: AuthRepository, dispose: disposeAuthRepository)
 final class RemoteAuthRepository implements AuthRepository {
-  RemoteAuthRepository(this._remote, this._credentials);
+  RemoteAuthRepository(this._remote, this._credentials, this._safeApiCall);
   final AuthRemoteDataSource _remote;
   final CredentialStore _credentials;
+  final SafeApiCall _safeApiCall;
   final _sessions = StreamController<User?>.broadcast();
   User? _user;
   int _generation = 0;
@@ -29,12 +29,10 @@ final class RemoteAuthRepository implements AuthRepository {
     _sessions.add(user);
   }
 
-  static const _storageFailure = Failure(
-    FailureKind.storage,
-    'Unable to access secure storage. Please try again.',
-  );
+  static const _storageMessage =
+      'Unable to access secure storage. Please try again.';
   static const _cancelled = Failure(
-    FailureKind.unexpected,
+    FailureKind.cancelled,
     'The session changed. Please sign in again.',
   );
 
@@ -44,75 +42,87 @@ final class RemoteAuthRepository implements AuthRepository {
     required String password,
   }) async {
     final generation = ++_generation;
-    late final LoginResponse response;
-    try {
-      response = await _remote.login(
+    final response = await _safeApiCall((token) async {
+      final response = await _remote.login(
         LoginRequest(email: email, password: password),
+        cancelToken: token,
       );
-    } on Object catch (error) {
-      return FailureResult(mapNetworkFailure(error));
-    }
-    if (generation != _generation || _disposed) {
-      return const FailureResult(_cancelled);
-    }
-    if (response.accessToken.isEmpty) {
-      return const FailureResult(
-        Failure(
-          FailureKind.unexpected,
-          'The service returned an empty session.',
-        ),
+      return (
+        accessToken: response.accessToken,
+        user: response.user.toEntity(),
       );
-    }
-    try {
-      await _credentials.write(response.accessToken);
-      if (generation != _generation || _disposed) {
-        await _credentials.clear();
+    });
+    return response.flatMap((response) async {
+      if (_isStale(generation)) {
         return const FailureResult(_cancelled);
       }
-    } on Object {
-      return const FailureResult(_storageFailure);
-    }
-    final user = response.user.toEntity();
-    _publish(user);
-    return Success(user);
+      if (response.accessToken.isEmpty) {
+        return const FailureResult(
+          Failure(
+            FailureKind.invalidResponse,
+            'The service returned an empty session.',
+          ),
+        );
+      }
+      final saved = await safeStorageCall(() async {
+        await _credentials.write(response.accessToken);
+        if (_isStale(generation)) {
+          await _credentials.clear();
+          return false;
+        }
+        return true;
+      }, message: _storageMessage);
+      return saved.flatMap((isCurrent) {
+        if (!isCurrent || _isStale(generation)) {
+          return const FailureResult<User>(_cancelled);
+        }
+        _publish(response.user);
+        return Success(response.user);
+      });
+    });
   }
 
   @override
   Future<Result<User?>> restoreSession() async {
     final generation = _generation;
-    try {
-      if (await _credentials.read() == null) return const Success(null);
-    } on Object {
-      return const FailureResult(_storageFailure);
-    }
-    try {
-      final user = (await _remote.currentUser()).toEntity();
-      if (generation != _generation || _disposed) {
+    final stored = await safeStorageCall(
+      _credentials.read,
+      message: _storageMessage,
+    );
+    return stored.flatMap((stored) async {
+      if (_isStale(generation)) {
         return const FailureResult(_cancelled);
       }
-      _publish(user);
-      return Success(user);
-    } on Object catch (error) {
-      final failure = mapNetworkFailure(error);
-      if (failure.kind == FailureKind.unauthorized &&
-          generation == _generation) {
-        await logout();
+      if (stored == null) return const Success(null);
+      final result = await _safeApiCall(
+        (token) async =>
+            (await _remote.currentUser(cancelToken: token)).toEntity(),
+      );
+      if (result case FailureResult<User>(:final failure)) {
+        if (failure.kind == FailureKind.unauthorized && !_isStale(generation)) {
+          final cleared = await logout();
+          if (cleared case FailureResult<void>(:final failure)) {
+            return FailureResult<User?>(failure);
+          }
+        }
+        return FailureResult<User?>(failure);
       }
-      return FailureResult(failure);
-    }
+      return result.flatMap<User?>((user) {
+        if (_isStale(generation)) return const FailureResult(_cancelled);
+        _publish(user);
+        return Success(user);
+      });
+    });
   }
 
   @override
   Future<Result<void>> logout() async {
     ++_generation;
     _publish(null);
-    try {
-      await _credentials.clear();
-      return const Success(null);
-    } on Object {
-      return const FailureResult(_storageFailure);
-    }
+    return safeStorageCall(_credentials.clear, message: _storageMessage);
   }
+
+  bool _isStale(int generation) => generation != _generation || _disposed;
 
   Future<void> dispose() async {
     _disposed = true;

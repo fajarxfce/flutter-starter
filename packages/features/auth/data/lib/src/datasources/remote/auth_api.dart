@@ -13,7 +13,10 @@ abstract class AuthApi {
   @factoryMethod
   factory AuthApi(Dio dio, {@ignoreParam String? baseUrl}) = _AuthApi;
   @POST('/auth/login')
-  Future<LoginResponse> login(@Body() LoginRequest request);
+  Future<LoginResponse> login(
+    @Body() LoginRequest request, {
+    @CancelRequest() CancelToken? cancelToken,
+  });
   @GET('/auth/me')
-  Future<UserDto> me();
+  Future<UserDto> me({@CancelRequest() CancelToken? cancelToken});
 }
