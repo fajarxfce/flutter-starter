@@ -9,7 +9,6 @@ dependencies:
   injectable: any
   core_common: any
   dio: any
-  http_parser: any
   json_annotation: any
 dev_dependencies:
   core_testing: any

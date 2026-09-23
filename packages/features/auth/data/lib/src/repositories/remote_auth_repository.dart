@@ -11,10 +11,9 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: AuthRepository, dispose: disposeAuthRepository)
 final class RemoteAuthRepository implements AuthRepository {
-  RemoteAuthRepository(this._remote, this._credentials, this._safeApiCall);
+  RemoteAuthRepository(this._remote, this._credentials);
   final AuthRemoteDataSource _remote;
   final CredentialStore _credentials;
-  final SafeApiCall _safeApiCall;
   final _sessions = StreamController<User?>.broadcast();
   User? _user;
   int _generation = 0;
@@ -42,7 +41,7 @@ final class RemoteAuthRepository implements AuthRepository {
     required String password,
   }) async {
     final generation = ++_generation;
-    final response = await _safeApiCall(() async {
+    final response = await safeApiCall(() async {
       final response = await _remote.login(
         LoginRequest(email: email, password: password),
       );
@@ -93,7 +92,7 @@ final class RemoteAuthRepository implements AuthRepository {
         return const FailureResult(_cancelled);
       }
       if (stored == null) return const Success(null);
-      final result = await _safeApiCall(
+      final result = await safeApiCall(
         () async => (await _remote.currentUser()).toEntity(),
       );
       if (result case FailureResult<User>(:final failure)) {

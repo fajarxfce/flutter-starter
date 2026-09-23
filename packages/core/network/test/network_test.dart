@@ -15,9 +15,6 @@ class _CyclicDioException extends DioException {
 
 void main() {
   test('plain safeApiCall automatically maps every DioExceptionType', () async {
-    final call = SafeApiCall(
-      const NetworkConfig(baseUrl: 'https://example.invalid'),
-    );
     final expected = {
       DioExceptionType.connectionTimeout: FailureKind.timeout,
       DioExceptionType.sendTimeout: FailureKind.timeout,
@@ -32,7 +29,7 @@ void main() {
     expect(expected.keys.toSet(), DioExceptionType.values.toSet());
     for (final type in DioExceptionType.values) {
       final options = RequestOptions(path: '/resource');
-      final result = await call<void>(() async {
+      final result = await safeApiCall<void>(() async {
         throw DioException(
           requestOptions: options,
           type: type,
@@ -201,9 +198,6 @@ void main() {
   test(
     'decoding and mapping exceptions are caught by the API boundary',
     () async {
-      final call = SafeApiCall(
-        const NetworkConfig(baseUrl: 'https://example.invalid'),
-      );
       final checked = CheckedFromJsonException(
         {'secret': 'private'},
         'id',
@@ -222,7 +216,7 @@ void main() {
           error: checked,
         ),
       ]) {
-        final result = await call(() => operation());
+        final result = await safeApiCall(() => operation());
         final failure = (result as FailureResult<String>).failure;
         expect(failure.kind, FailureKind.invalidResponse);
         expect(failure.message, isNot(contains('private')));

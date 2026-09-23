@@ -20,9 +20,6 @@ void main() {
     test(
       '${entry.key.runtimeType} is classified directly and through Dio wrappers',
       () async {
-        final call = SafeApiCall(
-          const NetworkConfig(baseUrl: 'https://example.invalid'),
-        );
         final options = RequestOptions(path: '/resource');
         for (final error in [
           entry.key,
@@ -33,7 +30,7 @@ void main() {
             error: entry.key,
           ),
         ]) {
-          final result = await call<void>(() => throw error);
+          final result = await safeApiCall<void>(() => throw error);
           final failure = (result as FailureResult<void>).failure;
           expect(failure.kind, entry.value);
           expect(failure.message, isNot(contains('private')));
@@ -41,20 +38,4 @@ void main() {
       },
     );
   }
-
-  test('TLS and storage causes inside connectionError are never retried', () {
-    final policy = ApiRetryPolicy.readOnly();
-    final options = RequestOptions(path: '/resource');
-    for (final cause in [
-      const HandshakeException('handshake failed'),
-      const Failure(FailureKind.storage, 'Keychain unavailable'),
-    ]) {
-      final error = DioException(
-        requestOptions: options,
-        type: DioExceptionType.connectionError,
-        error: cause,
-      );
-      expect(policy.delayAfter(error, 1), isNull);
-    }
-  });
 }

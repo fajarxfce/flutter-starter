@@ -33,7 +33,6 @@ void main() {
     repository = RemoteAuthRepository(
       AuthRemoteDataSource(AuthApi(dio)),
       store,
-      SafeApiCall(const NetworkConfig(baseUrl: 'https://demo.invalid')),
     );
   });
   tearDown(() async {

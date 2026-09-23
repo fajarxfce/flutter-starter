@@ -2,6 +2,15 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Public safe API function
+
+- Replaced the injected `SafeApiCall` class with the public `safeApiCall` function. Removed retry/backoff orchestration, helper-managed cancellation, `NetworkConfig.onFailure`, and the unused direct HTTP-date parser dependency. Each callback runs once; cancellation is passed directly to Dio/Retrofit.
+- `dart run melos run check --no-select`: passed with 130 tests, clean analysis, formatting, dependency policy, and architecture checks. Removed tests for the deleted retry/observer API; retained all Dio/HTTP/native exception mapping and auth regressions. Real Dio tests cover pre-cancelled requests, cancellation reaching transport, and late adapter errors.
+- `flutter pub get --enforce-lockfile`: passed; all resolved versions remain unchanged. `http_parser` remains a transitive dependency.
+- Melos generation passed and removed the helper from both the network and auth dependency graphs.
+
+Platform builds and native integration were not repeated for this function refactor. The records below describe earlier implementations.
+
 ## Automatic Dio failure mapping
 
 - Normal calls now use `safeApiCall(() => request())`. Cancellation remains optional; repository callbacks no longer receive or create a token by default.

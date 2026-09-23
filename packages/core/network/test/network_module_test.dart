@@ -66,7 +66,6 @@ void main() {
   test('generated providers share the configured client and transport', () {
     final dio = container<Dio>();
     expect(container<Dio>(), same(dio));
-    expect(container<SafeApiCall>(), same(container<SafeApiCall>()));
     expect(dio.httpClientAdapter, same(adapter));
     expect(dio.options, same(container<BaseOptions>()));
     expect(dio.options.baseUrl, 'https://api.example.com');

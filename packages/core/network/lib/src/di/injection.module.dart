@@ -7,7 +7,6 @@
 import 'dart:async' as _i687;
 
 import 'package:core_common/core_common.dart' as _i699;
-import 'package:core_network/src/calls/safe_api_call.dart' as _i828;
 import 'package:core_network/src/config/network_config.dart' as _i129;
 import 'package:core_network/src/di/injection.dart' as _i833;
 import 'package:core_network/src/interceptors/credential_interceptor.dart'
@@ -33,9 +32,6 @@ class CoreNetworkPackageModule extends _i526.MicroPackageModule {
         gh<_i699.CredentialStore>(),
         gh<_i129.NetworkConfig>(),
       ),
-    );
-    gh.lazySingleton<_i828.SafeApiCall>(
-      () => _i828.SafeApiCall(gh<_i129.NetworkConfig>()),
     );
     gh.lazySingleton<_i361.Dio>(
       () => networkModule.dio(
