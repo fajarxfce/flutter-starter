@@ -14,11 +14,9 @@ dependencies:
   core_data: any
   core_network: any
   core_design_system: any
-  auth_domain: any
   auth_data: any
   auth_presentation: any
   home_presentation: any
-  settings_domain: any
   settings_data: any
   settings_presentation: any
   cupertino_icons: any
@@ -39,5 +37,6 @@ dev_dependencies:
   injectable_generator: any
   flutter_flavorizr: any
   core_testing: any
+  auth_domain: any
 flutter:
   uses-material-design: true

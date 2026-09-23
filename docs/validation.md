@@ -2,6 +2,17 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Feature-owned use-case registration
+
+- Auth and settings use-case bindings now live in their data packages' `injection.dart`, collected by the existing generated micro-package modules. App DI supplies runtime configuration and composes these modules; it no longer imports either domain package.
+- `flutter pub get --enforce-lockfile`: passed. Auth domain is now an app test dependency; the app's unused settings domain dependency was removed. No resolved versions changed.
+- `dart run melos run check --no-select`: passed with 90 tests, clean analysis, formatting, dependency policy, and architecture checks.
+- New package tests initialize generated feature modules without app DI. Auth exercises all five use cases through login, session observation, restore, expiry, and logout; settings exercises theme loading and persistence. Both verify use-case factory lifetimes.
+- Existing app tests still cover bootstrap, generated route/Bloc composition, deep links, login/logout, session expiry, and appearance persistence.
+- `dart run melos run generate --no-select`: passed; all 14 generated files stayed byte-for-byte identical on regeneration.
+
+Platform builds and native integration were not repeated for this registration refactor. Their latest results are recorded below.
+
 ## Shared versions, consolidated DI, and Bloc enforcement
 
 - Root `pubspec_overrides.yaml` owns 29 hosted dependency constraints. All 14 pubspecs use `any` for hosted/workspace dependencies and retain SDK declarations. All 173 resolved dependency versions are unchanged.

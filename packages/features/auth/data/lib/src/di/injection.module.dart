@@ -23,10 +23,14 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
   // initializes the registration of main-scope dependencies inside of GetIt
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
+    final authModule = _$AuthModule();
     gh.lazySingleton<_i470.DemoSessionRepository>(
       () => _i574.AdapterDemoSessionRepository(gh<_i361.Dio>()),
     );
     gh.lazySingleton<_i42.AuthApi>(() => _i42.AuthApi(gh<_i361.Dio>()));
+    gh.factory<_i470.ExpireDemoSession>(
+      () => authModule.expireDemoSession(gh<_i470.DemoSessionRepository>()),
+    );
     gh.lazySingleton<_i471.AuthRemoteDataSource>(
       () => _i471.AuthRemoteDataSource(gh<_i42.AuthApi>()),
     );
@@ -37,5 +41,17 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
       ),
       dispose: _i570.disposeAuthRepository,
     );
+    gh.factory<_i470.Login>(() => authModule.login(gh<_i470.AuthRepository>()));
+    gh.factory<_i470.RestoreSession>(
+      () => authModule.restoreSession(gh<_i470.AuthRepository>()),
+    );
+    gh.factory<_i470.Logout>(
+      () => authModule.logout(gh<_i470.AuthRepository>()),
+    );
+    gh.factory<_i470.WatchSession>(
+      () => authModule.watchSession(gh<_i470.AuthRepository>()),
+    );
   }
 }
+
+class _$AuthModule extends _i570.AuthModule {}

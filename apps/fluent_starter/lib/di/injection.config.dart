@@ -11,7 +11,6 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
 import 'package:auth_data/auth_data.dart' as _i1005;
-import 'package:auth_domain/auth_domain.dart' as _i470;
 import 'package:auth_presentation/auth_presentation.dart' as _i612;
 import 'package:core_common/core_common.dart' as _i699;
 import 'package:core_network/core_network.dart' as _i309;
@@ -23,7 +22,6 @@ import 'package:fluent_starter/routing/guards/session_guard.dart' as _i749;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:settings_data/settings_data.dart' as _i201;
-import 'package:settings_domain/settings_domain.dart' as _i406;
 import 'package:settings_presentation/settings_presentation.dart' as _i1029;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -39,15 +37,6 @@ extension GetItInjectableX on _i174.GetIt {
     await _i201.SettingsDataPackageModule().init(gh);
     await _i1029.SettingsPresentationPackageModule().init(gh);
     final appModule = _$AppModule();
-    gh.factory<_i406.LoadTheme>(
-      () => appModule.loadTheme(gh<_i406.SettingsRepository>()),
-    );
-    gh.factory<_i406.SaveTheme>(
-      () => appModule.saveTheme(gh<_i406.SettingsRepository>()),
-    );
-    gh.factory<_i470.ExpireDemoSession>(
-      () => appModule.expireDemoSession(gh<_i470.DemoSessionRepository>()),
-    );
     gh.lazySingleton<_i699.AppEnvironment>(
       () => appModule.environment(gh<_i209.AppConfig>()),
     );
@@ -56,16 +45,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i361.HttpClientAdapter>(
       () => appModule.httpClientAdapter(gh<_i209.AppConfig>()),
-    );
-    gh.factory<_i470.Login>(() => appModule.login(gh<_i470.AuthRepository>()));
-    gh.factory<_i470.RestoreSession>(
-      () => appModule.restoreSession(gh<_i470.AuthRepository>()),
-    );
-    gh.factory<_i470.Logout>(
-      () => appModule.logout(gh<_i470.AuthRepository>()),
-    );
-    gh.factory<_i470.WatchSession>(
-      () => appModule.watchSession(gh<_i470.AuthRepository>()),
     );
     gh.lazySingleton<_i749.SessionGuard>(
       () => _i749.SessionGuard(gh<_i612.SessionBloc>()),

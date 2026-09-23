@@ -1,5 +1,4 @@
 import 'package:auth_data/auth_data.dart';
-import 'package:auth_domain/auth_domain.dart';
 import 'package:auth_presentation/auth_presentation.dart';
 import 'package:core_common/core_common.dart';
 import 'package:core_data/core_data.dart';
@@ -11,20 +10,10 @@ import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:settings_data/settings_data.dart';
-import 'package:settings_domain/settings_domain.dart';
 import 'package:settings_presentation/settings_presentation.dart';
 
 @InjectableInit(
-  ignoreUnregisteredTypes: [
-    AppConfig,
-    CredentialStore,
-    PreferenceStore,
-    GetIt,
-    // Bound by feature data modules; interfaces belong to pure domain.
-    AuthRepository,
-    DemoSessionRepository,
-    SettingsRepository,
-  ],
+  ignoreUnregisteredTypes: [AppConfig, CredentialStore, PreferenceStore, GetIt],
   externalPackageModulesBefore: [
     ExternalModule(CoreNetworkPackageModule),
     ExternalModule(AuthDataPackageModule),
@@ -65,27 +54,9 @@ Future<GetIt> configureDependencies(
   return container;
 }
 
-/// Bindings for pure domain use cases and runtime/platform dependencies.
+/// Runtime and platform dependencies shared by the feature modules.
 @module
 abstract class AppModule {
-  @injectable
-  Login login(AuthRepository repository) => Login(repository);
-
-  @injectable
-  RestoreSession restoreSession(AuthRepository repository) =>
-      RestoreSession(repository);
-
-  @injectable
-  Logout logout(AuthRepository repository) => Logout(repository);
-
-  @injectable
-  WatchSession watchSession(AuthRepository repository) =>
-      WatchSession(repository);
-
-  @injectable
-  ExpireDemoSession expireDemoSession(DemoSessionRepository repository) =>
-      ExpireDemoSession(repository);
-
   @lazySingleton
   AppEnvironment environment(AppConfig config) =>
       AppEnvironment(label: config.label, isDemo: config.isDemo);
@@ -99,10 +70,4 @@ abstract class AppModule {
   @lazySingleton
   HttpClientAdapter httpClientAdapter(AppConfig config) =>
       config.isDemo ? DemoAdapter() : HttpClientAdapter();
-
-  @injectable
-  LoadTheme loadTheme(SettingsRepository repository) => LoadTheme(repository);
-
-  @injectable
-  SaveTheme saveTheme(SettingsRepository repository) => SaveTheme(repository);
 }
