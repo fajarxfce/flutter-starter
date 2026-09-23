@@ -1,0 +1,52 @@
+enum AppFlavor { dev, staging, prod }
+
+enum BackendMode { demo, api }
+
+final class AppConfig {
+  const AppConfig({
+    required this.flavor,
+    required this.backend,
+    required this.baseUrl,
+  });
+  final AppFlavor flavor;
+  final BackendMode backend;
+  final String baseUrl;
+  String get label => '${flavor.name} · ${backend.name}';
+  String get storageNamespace =>
+      'fluent_starter.${flavor.name}.${backend.name}';
+  bool get isDemo => backend == BackendMode.demo;
+  factory AppConfig.fromEnvironment() => AppConfig.parse(
+    flavor: const String.fromEnvironment('FLAVOR', defaultValue: 'dev'),
+    backend: const String.fromEnvironment('BACKEND', defaultValue: 'demo'),
+    baseUrl: const String.fromEnvironment('API_BASE_URL'),
+  );
+  factory AppConfig.parse({
+    required String flavor,
+    required String backend,
+    String baseUrl = '',
+  }) {
+    final selectedFlavor = AppFlavor.values.byName(flavor);
+    final selectedBackend = BackendMode.values.byName(backend);
+    if (selectedBackend == BackendMode.api) {
+      final uri = Uri.tryParse(baseUrl);
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.host.isEmpty ||
+          uri.userInfo.isNotEmpty ||
+          uri.hasQuery ||
+          uri.hasFragment ||
+          (uri.path != '' && uri.path != '/')) {
+        throw ArgumentError(
+          'API_BASE_URL must be an HTTPS origin without credentials, path, query or fragment.',
+        );
+      }
+    }
+    return AppConfig(
+      flavor: selectedFlavor,
+      backend: selectedBackend,
+      baseUrl: selectedBackend == BackendMode.demo
+          ? 'https://demo.invalid'
+          : baseUrl,
+    );
+  }
+}
