@@ -2,6 +2,16 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Network resources and local auth sessions
+
+- Added the public `networkBoundResource` fetch-and-commit function. Remote/decoding failures skip persistence; successful results wait for the local commit, and storage failures retain their original classification.
+- Auth's repository now composes remote and local data sources. An explicit `AuthSession` model and mapper replace the anonymous login record and inline token validation. The local data source owns session state, credential access, revision checks, ordered writes/rollback, notifications, and generated disposal.
+- `dart run melos run check --no-select`: passed with 139 tests, clean analysis, formatting, dependency policy, and architecture checks. Coverage includes resource commit ordering, rejected persistence after remote/decoding errors, whitespace-only tokens, overlapping session writes, queued logout followed by a new login, queue recovery after storage failure, and disposal during an unfinished write.
+- Existing auth, Bloc, routing, and widget regressions passed. Logout clears memory immediately and waits for credential cleanup; disposed local sources drain pending rollback. Idle queues release their completed futures, allowing widget-test containers to dispose outside the widget scheduler.
+- Melos generation passed, including the local data source's Injectable registration/disposer. All 14 generated source files remained byte-for-byte unchanged on regeneration.
+- `bash tool/test_linux.sh`: dev debug build and native integration passed with an isolated OS keyring, exercising login, restore through a fresh dependency container, and logout.
+- Web dev release build passed, including the Wasm dry run.
+
 ## Named Dio clients
 
 - Removed `NetworkConfig`. App bindings now supply `BaseOptions`, the transport adapter, and a logging interceptor under `@Named(mainApi)`. Core/network constructs the named Dio and credential interceptor. Retrofit auth and the demo-session repository explicitly select that client.

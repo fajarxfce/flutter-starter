@@ -50,6 +50,7 @@ void main() {
       'user': {'id': 42},
     },
     {'access_token': '', 'user': DemoAdapter.user},
+    {'access_token': '   ', 'user': DemoAdapter.user},
   ]) {
     test(
       'invalid login payload never persists credentials: $payload',
@@ -213,8 +214,16 @@ void main() {
       final fixture = await _create(credentials);
       final pending = _login(fixture.repository);
       await writing.future;
-      expect(await fixture.repository.logout(), isA<Success<void>>());
+      var logoutCompleted = false;
+      final logout = fixture.repository.logout().then((result) {
+        logoutCompleted = true;
+        return result;
+      });
+      expect(fixture.repository.currentUser, isNull);
+      await Future<void>.delayed(Duration.zero);
+      expect(logoutCompleted, isFalse);
       releaseWrite.complete();
+      expect(await logout, isA<Success<void>>());
       expect(
         ((await pending) as FailureResult<User>).failure.kind,
         FailureKind.cancelled,

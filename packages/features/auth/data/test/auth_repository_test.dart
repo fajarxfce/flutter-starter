@@ -13,6 +13,7 @@ void main() {
   late DemoAdapter adapter;
   late Dio dio;
   late RemoteAuthRepository repository;
+  late AuthLocalDataSource local;
   final containers = <GetIt>[];
   Future<Dio> createClient({void Function(String)? log}) async {
     final container = GetIt.asNewInstance();
@@ -38,13 +39,14 @@ void main() {
     store = FakeCredentialStore();
     adapter = DemoAdapter(latency: Duration.zero);
     dio = await createClient();
+    local = AuthLocalDataSource(store);
     repository = RemoteAuthRepository(
       AuthRemoteDataSource(AuthApi(dio)),
-      store,
+      local,
     );
   });
   tearDown(() async {
-    await repository.dispose();
+    await local.dispose();
     for (final container in containers) {
       await container.reset();
     }

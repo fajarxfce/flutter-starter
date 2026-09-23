@@ -6,6 +6,8 @@
 
 import 'dart:async' as _i687;
 
+import 'package:auth_data/src/datasources/local/auth_local_data_source.dart'
+    as _i134;
 import 'package:auth_data/src/datasources/remote/auth_api.dart' as _i42;
 import 'package:auth_data/src/datasources/remote/auth_remote_data_source.dart'
     as _i471;
@@ -24,6 +26,10 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
     final authModule = _$AuthModule();
+    gh.lazySingleton<_i134.AuthLocalDataSource>(
+      () => _i134.AuthLocalDataSource(gh<_i699.CredentialStore>()),
+      dispose: (i) => i.dispose(),
+    );
     gh.lazySingleton<_i42.AuthApi>(
       () => _i42.AuthApi(gh<_i361.Dio>(instanceName: 'mainApi')),
     );
@@ -35,15 +41,14 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
         gh<_i361.Dio>(instanceName: 'mainApi'),
       ),
     );
-    gh.factory<_i470.ExpireDemoSession>(
-      () => authModule.expireDemoSession(gh<_i470.DemoSessionRepository>()),
-    );
     gh.lazySingleton<_i470.AuthRepository>(
       () => _i168.RemoteAuthRepository(
         gh<_i471.AuthRemoteDataSource>(),
-        gh<_i699.CredentialStore>(),
+        gh<_i134.AuthLocalDataSource>(),
       ),
-      dispose: _i570.disposeAuthRepository,
+    );
+    gh.factory<_i470.ExpireDemoSession>(
+      () => authModule.expireDemoSession(gh<_i470.DemoSessionRepository>()),
     );
     gh.factory<_i470.Login>(() => authModule.login(gh<_i470.AuthRepository>()));
     gh.factory<_i470.RestoreSession>(

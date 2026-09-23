@@ -96,11 +96,14 @@ features/auth/data/lib/src/
   dto/user_dto.dart
   requests/login_request.dart
   responses/login_response.dart
+  models/auth_session.dart
+  datasources/local/auth_local_data_source.dart
   datasources/remote/auth_api.dart
   datasources/remote/auth_remote_data_source.dart
   datasources/demo/demo_adapter.dart
   di/injection.dart
   mappers/user_mapper.dart
+  mappers/auth_session_mapper.dart
   repositories/remote_auth_repository.dart
 
 features/auth/presentation/lib/src/
@@ -160,14 +163,14 @@ Adding a use case to an existing feature changes that feature's bindings and gen
 | Owner | Injectable registrations |
 |---|---|
 | Core network `lib/src/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
-| Auth data `lib/src/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, and `ExpireDemoSession`; lazy singleton API, data source, and repository implementations |
+| Auth data `lib/src/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
 | Auth presentation | Factory `LoginBloc` and shared `SessionBloc`, receiving domain use cases |
 | Settings data `lib/src/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
 | Settings presentation | Shared `AppearanceBloc`, receiving settings use cases |
 | App `lib/di/injection.dart` | `AppEnvironment`; `mainApi` bindings for `BaseOptions`, safe logging interceptor, and `HttpClientAdapter` (demo or platform transport) |
 | App routing | Shared `AppRouter` and `SessionGuard` |
 
-The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named credential and logging interceptors. Authentication headers are restricted to the API origin and omitted from login requests. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, repository session stream, and Dio transport when the container is reset.
+The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named credential and logging interceptors. Authentication headers are restricted to the API origin and omitted from login requests. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, local session data source, and Dio transport when the container is reset. The local data source drains pending credential operations before closing its session stream.
 
 `AuthApi` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. `@Named(mainApi)` selects its Dio instance. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module. The demo-session repository selects the same named client.
 
@@ -209,7 +212,7 @@ HTTP 400/422 map to validation, 401 to unauthorized, 403 to forbidden, 404 to no
 
 Nested Dio errors and explicit infrastructure failures are inspected safely. On native platforms, socket/DNS, HTTP I/O and OS errors map to `network`; TLS/handshake/certificate errors map to `security`. Browser connection failures use Dio's `connectionError` type; conditional imports keep native APIs out of web builds. `FormatException`, checked JSON errors and mapping type errors become `invalidResponse`; genuinely unknown causes retain the `unexpected` fallback. Failure messages do not copy raw exception text or server bodies.
 
-Storage uses the pure Dart `safeStorageCall` helper from core/common, with an optional user-facing message. It preserves `FailureKind.storage` for keychain/preferences failures. `Result.flatMap` continues successful steps and skips subsequent work after a failure; each I/O step uses its corresponding safe boundary. Auth and settings repositories contain no `try/catch` blocks, and keep their session-generation and persistence checks.
+Storage uses the pure Dart `safeStorageCall` helper from core/common, with an optional user-facing message. It preserves `FailureKind.storage` for keychain/preferences failures. `Result.flatMap` continues successful steps and skips subsequent work after a failure; each I/O step uses its corresponding safe boundary. Auth and settings repositories contain no `try/catch` blocks. Auth delegates persistence, session revisions, and notifications to its local data source.
 
 Cancellation belongs to the Dio/Retrofit request. When needed, pass a token inside the closure; Dio emits a cancellation exception that the function maps to `FailureKind.cancelled`:
 
@@ -220,6 +223,25 @@ final result = await safeApiCall(
 ```
 
 The helper performs no retries, backoff, cancellation scheduling, logging, or telemetry. Retry behavior, if introduced for a specific endpoint, must account for whether that operation can safely be repeated.
+
+### Network resources and local session ownership
+
+`networkBoundResource<Remote, T>` is the fetch-and-commit form of a network-bound resource. `fetch` runs through `safeApiCall`, including DTO validation/mapping. Only successful remote data reaches `save`, which returns a typed `Result<T>` from the local source of truth. A storage failure remains a storage failure, and success is returned only after the local commit completes. This function has no cache-first emission, automatic retry, or DI registration.
+
+Auth's login implementation declares the two stages:
+
+```dart
+final revision = _local.beginLogin();
+final request = LoginRequest(email: email, password: password);
+return networkBoundResource(
+  fetch: () async => (await _remote.login(request)).toSession(),
+  save: (session) => _local.saveSession(session, revision: revision),
+);
+```
+
+`AuthSessionMapper` validates the token and produces an explicit `AuthSession` model containing the token and mapped user. `AuthLocalDataSource` owns secure-storage access, the current user, session notifications, and revision checks. Repository methods select the request and auth policy; they contain no mutable session state, stream controllers, rollback helpers, or direct credential access. Session restoration uses the same resource function and explicitly invalidates only the current session after a 401.
+
+Local credential operations execute in order. A cancelled login's rollback finishes before a newer login writes its token. Logout clears the in-memory session immediately; its future completes after queued credential cleanup succeeds or reports a storage failure. Disposal also waits for in-flight cleanup. The local data source is a feature-owned Injectable lazy singleton with an annotated disposal method; the repository receives it through constructor injection.
 
 ### Generated navigation
 
