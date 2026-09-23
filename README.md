@@ -36,11 +36,11 @@ packages/core/design_system        Fluent themes, tokens and components
 packages/core/testing              fakes and mock helpers (tests only)
 packages/features/auth/domain      entities, repository contract, use cases
 packages/features/auth/data        Retrofit, remote data source, JSON DTOs, repository
-packages/features/auth/presentation login/session Blocs, Freezed state, Formz, login UI
-packages/features/home/presentation navigation shell and dashboard UI
+packages/features/auth/presentation login/session Blocs, Freezed state, Formz, login routes/UI
+packages/features/home/presentation dashboard Bloc/UI, session port, feature routes
 packages/features/settings/domain  theme entity, repository contract, use cases
 packages/features/settings/data    persisted appearance preferences
-packages/features/settings/presentation appearance Bloc and preferences UI
+packages/features/settings/presentation appearance Bloc and preferences routes/UI
 ```
 
 ```mermaid
@@ -57,7 +57,7 @@ flowchart LR
   Network --> Common
 ```
 
-Domain has no Flutter, transport, persistence, JSON, or DI framework imports. Presentation Blocs depend on domain use cases through constructors. Injectable generates package modules for core/network, auth/data, auth/presentation, settings/data, and settings/presentation; the app composes them in an isolated GetIt container. GetIt access stays in DI, bootstrap, and route composition. Route pages bind presentation state and events to feature widgets; features do not import each other. Home receives display values and event callbacks from the app.
+Domain has no Flutter, transport, persistence, JSON, or DI framework imports. Presentation Blocs depend on domain use cases through constructors. Injectable generates package modules for core/network, auth/data, auth/presentation, home/presentation, settings/data, and settings/presentation; the app composes them in an isolated GetIt container. GetIt access stays in DI, bootstrap, and route composition. Route pages bind presentation state and events to feature widgets; features do not import each other. Home consumes its own `HomeSession` presentation contract through `HomeBloc`; the app adapter maps auth session state and commands into that contract.
 
 `tool/check_architecture.dart` checks package dependencies, production imports/exports (including conditional ones), forbidden framework dependencies, private cross-package imports, directory escapes, and cycles. It uses the Dart analyzer AST, not text matching. Generated files are checked too. The allowlist requires an explicit decision when adding a package.
 
@@ -74,7 +74,7 @@ To add a library, declare it as `any` in the consuming package and add its const
 1. Create packages under `packages/features/<feature>/{domain,data,presentation}` as needed, with unique package names, `resolution: workspace`, `publish_to: none`, and the shared SDK constraint.
 2. Register each package in root `workspace` and update the dependency allowlist in `tool/check_architecture.dart`.
 3. Define entities, repository interfaces, and use cases in domain; implement DTOs/transport/mapping in data; inject use cases into event-driven presentation Blocs.
-4. Annotate data implementations and Blocs. Add one `lib/di/injection.dart` per participating package with `@InjectableInit.microPackage`, generate it, and include its module in the app's `lib/di/injection.dart`. Group pure domain use-case bindings in a single `@module` inside the feature data package's `injection.dart`. Add `@RoutePage` adapters and route declarations; keep cross-feature coordination in the app.
+4. Annotate data implementations and Blocs. Add one `lib/di/injection.dart` per participating package with `@InjectableInit.microPackage`, generate it, and include its module in the app's `lib/di/injection.dart`. Group pure domain use-case bindings in a single `@module` inside the feature data package's `injection.dart`. Keep `@RoutePage` pages under the owning presentation feature. Add a `src/navigation/<feature>_router.dart` annotated with `@AutoRouterConfig`, export its configuration and generated routes through the package barrel, and compose its subtree once in the app. Keep cross-feature coordination in the app.
 5. Generate code, add behavior tests, and run the quality gate. Never access another package's `lib/src`.
 
 Use cases return `Success<T>` or `FailureResult<T>`. Data exceptions and DTOs never reach presentation. Freezed handles presentation state; JsonSerializable handles wire models. Domain models are plain Dart.
@@ -142,7 +142,7 @@ Core packages follow the same convention: storage contracts and implementations,
 
 Presentation code lives under `lib/src/<feature>/`, with Bloc, state, and event files together in `bloc/`. Inputs, pages, and widgets belong to that feature. All variants of one event family live in its `_event.dart`; Freezed state output stays beside its state source. Presentation tests mirror the feature folders. Each participating package keeps its Injectable entry point and generated module in `lib/di/`.
 
-The architecture check requires presentation feature sources under `lib/src/`, with exceptions for the package barrel and `lib/di/`. It enforces export-only package barrels and separates unrelated public types. A sealed base and its direct variants may share a file, which allows an event family to be read together. Private implementation companions are allowed outside UI; generated files follow generator conventions. Feature service-locator imports and DI imports in domain remain forbidden. Keep each model's generated `part` next to that model; do not collect models or use cases in a barrel.
+The architecture check requires presentation feature sources under `lib/src/`, with exceptions for the package barrel and `lib/di/`. It enforces export-only package barrels and separates unrelated public types. A sealed base and its direct variants may share a file, which allows an event family to be read together. Private implementation companions are allowed outside UI; generated files follow generator conventions. Feature service-locator imports are restricted to `lib/di/injection.dart` and `lib/src/navigation/<feature>_router.dart`; Blocs, pages, and other helpers cannot resolve dependencies. DI imports in domain remain forbidden. Keep each model's generated `part` next to that model; do not collect models or use cases in a barrel.
 
 ### UI contains rendering and event bindings only
 
@@ -150,6 +150,7 @@ Pages and views render presentation state and dispatch Bloc events. They do not 
 
 - `LoginBloc` owns input validation and submission.
 - `SessionBloc` owns startup restoration, session observation, checking, logout, demo-expiry orchestration, loading state, and feedback. `WatchSession`, `RestoreSession`, `Logout`, and `ExpireDemoSession` are domain use cases. The demo simulation has its own repository contract and data implementation.
+- `HomeBloc` consumes display-ready session state through `HomeSession`, forwards explicit session events, and releases its subscription when the overview route is removed. `AppHomeSession` adapts auth in app composition; home does not depend on auth.
 - `AppearanceBloc` owns theme loading, conversion to Flutter theme mode, and ordered persistence through settings use cases. Storage failures keep the chosen theme for the current session and expose feedback in state.
 - `AppRouter` observes authentication transitions and coordinates protected navigation with `SessionGuard`. UI has no sign-in completion callback or session subscription.
 
@@ -159,7 +160,7 @@ Pages and views render presentation state and dispatch Bloc events. They do not 
 
 ### Dependency injection and HTTP providers
 
-`apps/fluent_starter/lib/di/injection.dart` includes five generated micro-package modules. Each participating package has one `lib/di/injection.dart` entry point. Runtime `AppConfig`, `CredentialStore`, and `PreferenceStore` are supplied at the app boundary, allowing platform stores to be replaced in tests. The container also registers itself for route composition. Application dependencies are generated by Injectable. Session and appearance startup events finish before the app mounts.
+`apps/fluent_starter/lib/di/injection.dart` includes six generated micro-package modules. Each participating package has one `lib/di/injection.dart` entry point. Runtime `AppConfig`, `CredentialStore`, and `PreferenceStore` are supplied at the app boundary, allowing platform stores to be replaced in tests. The container also registers itself for route composition. Application dependencies are generated by Injectable. Session and appearance startup events finish before the app mounts.
 
 `@InjectableInit.microPackage` generates registrations from the package's annotations. Annotate constructors/classes directly for data sources, repositories, Blocs, and the Retrofit factory. Handwritten `@module` bindings are needed for third-party constructors and pure domain classes that cannot carry DI annotations. Each feature data package groups its use-case bindings in its existing `injection.dart`: `AuthModule` for auth and `SettingsModule` for settings. Domain classes retain constructor injection without importing a DI framework.
 
@@ -169,11 +170,12 @@ Adding a use case to an existing feature changes that feature's bindings and gen
 |---|---|
 | Core network `lib/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
 | Auth data `lib/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
-| Auth presentation | Factory `LoginBloc` and shared `SessionBloc`, receiving domain use cases |
+| Auth presentation | Factory `LoginBloc`, shared `SessionBloc`, and `AuthRouter` configuration |
+| Home presentation | Factory `HomeBloc` receiving `HomeSession`, and `HomeRouter` configuration |
 | Settings data `lib/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
-| Settings presentation | Shared `AppearanceBloc`, receiving settings use cases |
+| Settings presentation | Shared `AppearanceBloc`, receiving settings use cases, and `SettingsRouter` configuration |
 | App `lib/di/injection.dart` | `AppEnvironment`; `mainApi` bindings for `BaseOptions`, safe logging interceptor, and `HttpClientAdapter` (demo or platform transport) |
-| App routing | Shared `AppRouter` and `SessionGuard` |
+| App routing | Shared `AppRouter`, `SessionGuard`, and `AppHomeSession` bound to `HomeSession` |
 
 The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named credential and logging interceptors. Authentication headers are restricted to the API origin and omitted from login requests. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, local session data source, and Dio transport when the container is reset. The local data source drains pending credential operations before closing its session stream.
 
@@ -250,11 +252,41 @@ Local credential operations execute in order. A cancelled login's rollback finis
 
 ### Generated navigation
 
-The router binds `LoginRoute.page` to `BlocProvider(create: (_) => container<LoginBloc>())` directly. Each login route owns a fresh Bloc and closes it on removal. Bootstrap provides the shared session/appearance Blocs by value; their lifecycle belongs to the DI container. There is no application service bag or factory callback between Injectable and a Bloc. `LoginSubmitted` uses `droppable()` to ignore concurrent submissions; email/password edits are ignored while submitting.
+Each feature presentation package owns its pages, route tree, and generated `PageRouteInfo` classes. `@RoutePage` lives beside that feature's Bloc and widgets. `@AutoRouterConfig` in `src/navigation/<feature>_router.dart` generates `<feature>_router.gr.dart` in the same package. Public barrels export the configuration and generated routes, so consumers never import another package's `src`.
 
-`routing/app_router.dart` declares `@AutoRouterConfig`; `@RoutePage` adapters generate `LoginRoute`, `HomeRoute`, `OverviewRoute`, and `PreferencesRoute` in `routing/app_router.gr.dart`. `FluentApp.router` consumes the injected router. The protected `/home` route hosts `AutoTabsRouter`: Overview is `/home`, Preferences is `/home/preferences`, and the Fluent navigation pane reads and updates its active tab. Back returns from Preferences to Overview. Typed navigation can use `HomeRoute(children: [PreferencesRoute()])`.
+```text
+auth/presentation/lib/
+  auth_presentation.dart
+  di/injection.dart
+  di/injection.module.dart
+  src/navigation/auth_router.dart
+  src/navigation/auth_router.gr.dart
+  src/login/pages/login_page.dart
+  src/login/pages/login_view.dart
+  src/login/bloc/...
+```
 
-Opening `/home/preferences` without a session redirects to login. The router receives authenticated session state and asks the guard to resume the pending destination. Logout and session expiry clear the protected route stack. No navigation decision runs in a page or view.
+With auto_route 11.2.0 / generator 10.6.0, `@AutoRouterConfig` can annotate a configuration class without extending `RootStackRouter`: code generation produces self-contained route information and page builders. `AuthRouter`, `HomeRouter`, and `SettingsRouter` supply route lists only; they create no extra navigation controllers or histories. `AppRouter` is the single running `RootStackRouter`. The old `AutoRouterConfig.module()` API is not used.
+
+App composition merges feature route trees:
+
+```dart
+...authRouter.routes,
+AutoRoute(
+  page: AppShellRoute.page,
+  path: '/home',
+  guards: [sessionGuard],
+  children: [...homeRouter.routes, ...settingsRouter.routes],
+),
+```
+
+Auth owns `/login`; home supplies `HomeRoute` at the empty child path, and settings supplies `SettingsRoute` at `preferences`. Each tab entry hosts an `AutoRouter` with the feature-owned pages beneath it. `/home` and `/home/preferences` retain their URLs. Only `AppShellPage` is generated in `app_router.gr.dart`; the shell combines feature entry routes in `AutoTabsRouter` and binds the Fluent navigation pane to tab state. The app tab list contains only `HomeRoute` and `SettingsRoute`. Add future home/settings pages beneath those feature roots; their local stack handles push, deep links, and back without changing app page adapters or tab declarations. A new top-level tab or cross-feature flow still requires app composition.
+
+`AuthRouter` binds `LoginRoute.page` directly to `BlocProvider(create: (_) => container<LoginBloc>())`; `HomeRouter` does the same for `HomeBloc`. These providers own fresh factory Blocs and close them when routes are removed. Pages contain no service locator or factories. Bootstrap provides shared session/appearance Blocs by value; their lifecycle belongs to the DI container. `LoginSubmitted` uses `droppable()`; email/password edits are ignored while submitting.
+
+Feature-local navigation uses its generated route types. The app can navigate across features with `AppShellRoute(children: [SettingsRoute(children: [PreferencesRoute()])])`, importing `PreferencesRoute` from settings' public barrel. For a feature-initiated cross-feature flow, define a small contract in the requesting feature and implement it in app composition using the target's public route; do not import app or another feature's presentation. No central registry of string destinations or universal navigator interface is required.
+
+Opening `/home/preferences` without a session redirects to login. The app router observes authenticated session state and asks the guard to resume the pending destination. Logout and session expiry clear the protected stack. Pages render state and dispatch events; navigation decisions and subscriptions stay outside UI.
 
 ## Authentication and storage
 
@@ -278,7 +310,7 @@ dart run melos run flavors --no-select
 
 `generate` runs build_runner in dependency order, then formats the workspace with the pinned Dart SDK. The formatting step also normalizes Injectable's micro-package output. `check` runs format verification, dependency policy, architecture validation, analysis, and all package/root tests. Individual scripts are `format`, `format-check`, `dependencies`, `architecture`, `analyze`, and `test`.
 
-Commit root `pubspec_overrides.yaml`, `pubspec.lock`, `*.g.dart`, `*.freezed.dart`, `*.gr.dart`, `*.config.dart`, and `*.module.dart`. Injectable produces app `injection.config.dart` and five package `injection.module.dart` files; auto_route produces `app_router.gr.dart`. Do not edit generated code. Freezed is pinned to **4.0.1** because 4.0.2 requires an analyzer version outside auto_route_generator's supported range. Upgrade the generator toolchain together, regenerate, and rerun checks.
+Commit root `pubspec_overrides.yaml`, `pubspec.lock`, `*.g.dart`, `*.freezed.dart`, `*.gr.dart`, `*.config.dart`, and `*.module.dart`. Injectable produces app `injection.config.dart` and six package `injection.module.dart` files; auto_route produces `app_router.gr.dart` plus the three feature router files. Do not edit generated code. Freezed is pinned to **4.0.1** because 4.0.2 requires an analyzer version outside auto_route_generator's supported range. Upgrade the generator toolchain together, regenerate, and rerun checks.
 
 Run the Melos `flavors` wrapper: it also restores the Flutter Runner scheme build/preparation actions omitted by Flavorizr 2.6, preserving Swift Package Manager support.
 

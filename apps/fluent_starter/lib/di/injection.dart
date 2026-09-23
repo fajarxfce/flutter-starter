@@ -8,6 +8,7 @@ import 'package:fluent_starter/config/app_config.dart';
 import 'package:fluent_starter/di/injection.config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
+import 'package:home_presentation/home_presentation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:settings_data/settings_data.dart';
 import 'package:settings_presentation/settings_presentation.dart';
@@ -18,6 +19,7 @@ import 'package:settings_presentation/settings_presentation.dart';
     ExternalModule(CoreNetworkPackageModule),
     ExternalModule(AuthDataPackageModule),
     ExternalModule(AuthPresentationPackageModule),
+    ExternalModule(HomePresentationPackageModule),
     ExternalModule(SettingsDataPackageModule),
     ExternalModule(SettingsPresentationPackageModule),
   ],

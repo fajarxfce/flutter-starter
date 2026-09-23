@@ -18,8 +18,10 @@ import 'package:dio/dio.dart' as _i361;
 import 'package:fluent_starter/config/app_config.dart' as _i209;
 import 'package:fluent_starter/di/injection.dart' as _i487;
 import 'package:fluent_starter/routing/app_router.dart' as _i902;
+import 'package:fluent_starter/routing/bindings/app_home_session.dart' as _i54;
 import 'package:fluent_starter/routing/guards/session_guard.dart' as _i749;
 import 'package:get_it/get_it.dart' as _i174;
+import 'package:home_presentation/home_presentation.dart' as _i1032;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:settings_data/settings_data.dart' as _i201;
 import 'package:settings_presentation/settings_presentation.dart' as _i1029;
@@ -34,6 +36,7 @@ extension GetItInjectableX on _i174.GetIt {
     await _i309.CoreNetworkPackageModule().init(gh);
     await _i1005.AuthDataPackageModule().init(gh);
     await _i612.AuthPresentationPackageModule().init(gh);
+    await _i1032.HomePresentationPackageModule().init(gh);
     await _i201.SettingsDataPackageModule().init(gh);
     await _i1029.SettingsPresentationPackageModule().init(gh);
     final appModule = _$AppModule();
@@ -52,6 +55,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i699.AppEnvironment>(
       () => appModule.environment(gh<_i209.AppConfig>()),
     );
+    gh.lazySingleton<_i1032.HomeSession>(
+      () => _i54.AppHomeSession(gh<_i612.SessionBloc>()),
+    );
     gh.lazySingleton<_i749.SessionGuard>(
       () => _i749.SessionGuard(gh<_i612.SessionBloc>()),
     );
@@ -59,7 +65,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i902.AppRouter(
         gh<_i749.SessionGuard>(),
         gh<_i612.SessionBloc>(),
-        gh<_i174.GetIt>(),
+        gh<_i612.AuthRouter>(),
+        gh<_i1032.HomeRouter>(),
+        gh<_i1029.SettingsRouter>(),
       ),
       dispose: (i) => i.close(),
     );

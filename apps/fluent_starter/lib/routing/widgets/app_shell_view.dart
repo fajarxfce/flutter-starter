@@ -2,8 +2,8 @@ import 'package:core_design_system/core_design_system.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 
 /// Fluent navigation shell. Route state is supplied by the app's AutoTabsRouter.
-class HomeView extends StatelessWidget {
-  const HomeView({
+class AppShellView extends StatelessWidget {
+  const AppShellView({
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.child,

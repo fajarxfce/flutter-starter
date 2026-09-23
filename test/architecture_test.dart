@@ -183,6 +183,41 @@ const explanation = 'Cubit, ValueNotifier and StatefulWidget';
       contains(contains('Injectable annotations are not allowed')),
     );
   });
+  test(
+    'feature DI and router configuration can resolve route-scoped Blocs',
+    () {
+      File(p.join(root.path, 'domain/pubspec.yaml')).writeAsStringSync(
+        'name: auth_presentation\ndependencies: {get_it: any}\n',
+      );
+      for (final path in [
+        'di/injection.dart',
+        'src/navigation/auth_router.dart',
+      ]) {
+        final file = File(p.join(root.path, 'domain/lib', path));
+        file.parent.createSync(recursive: true);
+        file.writeAsStringSync("import 'package:get_it/get_it.dart';");
+      }
+      expect(checkArchitecture(root), isEmpty);
+    },
+  );
+  for (final path in [
+    'src/login/bloc/login_bloc.dart',
+    'src/login/pages/login_page.dart',
+    'src/navigation/helpers.dart',
+  ]) {
+    test('feature locator access is rejected in $path', () {
+      File(p.join(root.path, 'domain/pubspec.yaml')).writeAsStringSync(
+        'name: auth_presentation\ndependencies: {get_it: any}\n',
+      );
+      final file = File(p.join(root.path, 'domain/lib', path));
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync("import 'package:get_it/get_it.dart';");
+      expect(
+        checkArchitecture(root),
+        contains(contains('service locator belongs to')),
+      );
+    });
+  }
   void writeView(String source) {
     final file = File(
       p.join(root.path, 'domain/lib/login/pages/login_view.dart'),

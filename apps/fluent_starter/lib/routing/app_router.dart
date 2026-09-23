@@ -4,19 +4,26 @@ import 'package:auth_presentation/auth_presentation.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fluent_starter/routing/app_router.gr.dart';
 import 'package:fluent_starter/routing/guards/session_guard.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
+import 'package:home_presentation/home_presentation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:settings_presentation/settings_presentation.dart';
 
 @lazySingleton
 @AutoRouterConfig(replaceInRouteName: 'Page,Route')
 class AppRouter extends RootStackRouter {
-  AppRouter(this.sessionGuard, SessionBloc session, this._container)
-    : _authenticated = session.state.isAuthenticated {
+  AppRouter(
+    this.sessionGuard,
+    SessionBloc session,
+    this._authRouter,
+    this._homeRouter,
+    this._settingsRouter,
+  ) : _authenticated = session.state.isAuthenticated {
     _subscription = session.stream.listen(_onSessionChanged);
   }
   final SessionGuard sessionGuard;
-  final GetIt _container;
+  final AuthRouter _authRouter;
+  final HomeRouter _homeRouter;
+  final SettingsRouter _settingsRouter;
   late final StreamSubscription<SessionState> _subscription;
   bool _authenticated;
 
@@ -27,7 +34,7 @@ class AppRouter extends RootStackRouter {
       sessionGuard.cancelPendingNavigation();
       unawaited(replaceAll([const LoginRoute()]));
     } else if (!sessionGuard.resumePendingNavigation()) {
-      unawaited(replaceAll([const HomeRoute()]));
+      unawaited(replaceAll([const AppShellRoute()]));
     }
   }
 
@@ -41,23 +48,12 @@ class AppRouter extends RootStackRouter {
   @override
   List<AutoRoute> get routes => [
     RedirectRoute(path: '/', redirectTo: '/home'),
+    ..._authRouter.routes,
     AutoRoute(
-      page: LoginRoute.page.copyWith(
-        builder: (data) => BlocProvider(
-          create: (_) => _container<LoginBloc>(),
-          child: LoginRoute.page.builder(data),
-        ),
-      ),
-      path: '/login',
-    ),
-    AutoRoute(
-      page: HomeRoute.page,
+      page: AppShellRoute.page,
       path: '/home',
       guards: [sessionGuard],
-      children: [
-        AutoRoute(page: OverviewRoute.page, path: ''),
-        AutoRoute(page: PreferencesRoute.page, path: 'preferences'),
-      ],
+      children: [..._homeRouter.routes, ..._settingsRouter.routes],
     ),
     RedirectRoute(path: '*', redirectTo: '/home'),
   ];

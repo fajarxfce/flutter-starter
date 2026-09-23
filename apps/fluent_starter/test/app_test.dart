@@ -11,19 +11,29 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:home_presentation/home_presentation.dart';
 import 'package:settings_presentation/settings_presentation.dart';
+
+import 'support/extended_settings_router.dart';
 
 void main() {
   late GetIt container;
   late AppRouter router;
   setUp(() => container = GetIt.asNewInstance());
   tearDown(() => container.reset());
-  Future<void> mount(WidgetTester tester) async {
+  Future<void> mount(
+    WidgetTester tester, {
+    SettingsRouter? settingsRouter,
+  }) async {
     container = await configureDependencies(
       AppConfig.parse(flavor: 'dev', backend: 'demo'),
       credentials: FakeCredentialStore(),
       preferences: FakePreferenceStore(),
     );
+    if (settingsRouter != null) {
+      await container.unregister<SettingsRouter>();
+      container.registerSingleton<SettingsRouter>(settingsRouter);
+    }
     router = container<AppRouter>();
     await tester.pumpWidget(
       MultiBlocProvider(
@@ -54,16 +64,71 @@ void main() {
   ) async {
     await mount(tester);
     expect(find.text('Sign in'), findsOneWidget);
+    final firstLogin = tester
+        .element(find.byKey(const Key('login_email')))
+        .read<LoginBloc>();
     await signIn(tester);
     expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
+    expect(firstLogin.isClosed, isTrue);
+    final firstHome = tester
+        .element(find.byKey(const Key('logout')))
+        .read<HomeBloc>();
     await tester.tap(find.byKey(const Key('logout')));
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
     expect(router.stack.length, 1);
     expect(container<SessionBloc>().state.user, isNull);
+    expect(
+      find.text('Welcome, Alex Morgan', skipOffstage: false),
+      findsNothing,
+    );
+    // Dart's completed cancellation future can belong to the real async zone.
+    await tester.runAsync(() async {});
+    await tester.pump();
+    expect(firstHome.isClosed, isTrue);
+    final secondLogin = tester
+        .element(find.byKey(const Key('login_email')))
+        .read<LoginBloc>();
+    expect(secondLogin, isNot(same(firstLogin)));
+    expect(secondLogin.state.email.value, isEmpty);
     await signIn(tester);
     expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
     expect(router.stack.length, 1);
+    expect(secondLogin.isClosed, isTrue);
+    final secondHome = tester
+        .element(find.byKey(const Key('logout')))
+        .read<HomeBloc>();
+    expect(secondHome, isNot(same(firstHome)));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('home session binding forwards check results to the feature', (
+    tester,
+  ) async {
+    await mount(tester);
+    await signIn(tester);
+    await tester.tap(find.text('Check session'));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.text('Your session is up to date.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('logout clears a nested destination before the next login', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        '/home/preferences';
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+    await mount(tester);
+    await signIn(tester);
+    expect(router.currentUrl, '/home/preferences');
+    container<SessionBloc>().add(const SessionLogoutRequested());
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/login');
+    await signIn(tester);
+    expect(router.currentUrl, '/home');
+    expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('protected nested route is restored after login', (tester) async {
@@ -97,7 +162,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
     expect(router.currentUrl, '/home');
-    unawaited(router.navigate(const HomeRoute(children: [PreferencesRoute()])));
+    unawaited(
+      router.navigate(
+        const AppShellRoute(
+          children: [
+            SettingsRoute(children: [PreferencesRoute()]),
+          ],
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Appearance'), findsOneWidget);
     expect(router.currentUrl, '/home/preferences');
@@ -111,6 +184,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
     expect(router.stack.length, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('a feature can add an internal page without changing app tabs', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        '/home/preferences/details';
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+    await mount(tester, settingsRouter: ExtendedSettingsRouter());
+    expect(find.text('Sign in'), findsOneWidget);
+    await signIn(tester);
+    expect(find.text('Feature details'), findsOneWidget);
+    expect(router.currentUrl, '/home/preferences/details');
+    expect(await router.maybePopTop(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Appearance'), findsOneWidget);
+    expect(router.currentUrl, '/home/preferences');
+    expect(await router.maybePopTop(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('appearance selection dispatches an event and updates the app', (

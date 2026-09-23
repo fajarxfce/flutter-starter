@@ -10,21 +10,21 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 
+import 'package:auth_presentation/src/login/pages/login_page.dart' as _i1;
 import 'package:auto_route/auto_route.dart' as _i2;
-import 'package:fluent_starter/routing/pages/app_shell_page.dart' as _i1;
 
 /// generated route for
-/// [_i1.AppShellPage]
-class AppShellRoute extends _i2.PageRouteInfo<void> {
-  const AppShellRoute({List<_i2.PageRouteInfo>? children})
-    : super(AppShellRoute.name, initialChildren: children);
+/// [_i1.LoginPage]
+class LoginRoute extends _i2.PageRouteInfo<void> {
+  const LoginRoute({List<_i2.PageRouteInfo>? children})
+    : super(LoginRoute.name, initialChildren: children);
 
-  static const String name = 'AppShellRoute';
+  static const String name = 'LoginRoute';
 
   static _i2.PageInfo page = _i2.PageInfo(
     name,
     builder: (data) {
-      return const _i1.AppShellPage();
+      return const _i1.LoginPage();
     },
   );
 }

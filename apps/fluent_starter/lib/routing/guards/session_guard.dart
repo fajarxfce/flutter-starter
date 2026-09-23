@@ -1,6 +1,5 @@
 import 'package:auth_presentation/auth_presentation.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:fluent_starter/routing/app_router.gr.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton

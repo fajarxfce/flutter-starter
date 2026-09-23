@@ -218,14 +218,23 @@ List<String> checkArchitecture(Directory root) {
         }
       }
       if (name != 'fluent_starter') {
+        final featureComposition =
+            name.endsWith('_presentation') &&
+            (relativePath == 'di/injection.dart' ||
+                relativePath ==
+                    'src/navigation/${name.replaceFirst('_presentation', '')}_router.dart');
         if (!generated &&
+            !featureComposition &&
             uris.any((uri) => uri.startsWith('package:get_it/'))) {
-          errors.add('$name: service locator belongs to app composition');
+          errors.add(
+            '$name: service locator belongs to app composition or feature route/DI composition',
+          );
         }
         if (!{
               'core_network',
               'auth_data',
               'auth_presentation',
+              'home_presentation',
               'settings_data',
               'settings_presentation',
             }.contains(name) &&

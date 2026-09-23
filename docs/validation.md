@@ -2,6 +2,19 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Feature-owned navigation
+
+- Auth, home, and settings now own their `@RoutePage` pages, route trees, and generated route classes. The app generates only `AppShellRoute` and composes the feature trees with its session guard. Feature router configuration classes use `@AutoRouterConfig` without creating additional `RootStackRouter` instances.
+- Home and settings expose one tab entry each, backed by an internal `AutoRouter` stack. A test fixture adds a deeper settings page without changing app routes or tab declarations; a guarded deep link reaches it after login, and back returns through preferences to overview.
+- Feature router bindings resolve factory Blocs through their injected container. Tests verify fresh login/home Blocs after logout and disposal when their routes leave the widget tree. Home consumes its own session contract, adapted from auth in app composition; its generated subtree also mounts in a host without app/auth dependencies.
+- `flutter pub get --enforce-lockfile`: passed; resolved versions and the root lockfile are unchanged.
+- `dart run melos run check --no-select`: passed with 155 tests, clean analysis, formatting, dependency policy, and architecture checks. Coverage includes typed navigation, guarded deep links, logout/expiry, session feedback, feature isolation, Bloc lifetimes, and restrictions on feature service-locator access.
+- Melos generation passed; all 19 generated source files remained byte-for-byte unchanged on regeneration, including the three feature routers and the new home Injectable module.
+- Web dev release build passed, including the Wasm dry run.
+- `bash tool/test_linux.sh`: dev debug build and native integration passed with an isolated OS keyring, exercising login, restore through a fresh dependency container, and logout.
+
+Android, Windows, iOS, and macOS builds were not repeated for this navigation refactor.
+
 ## Presentation grouped by feature
 
 - Presentation implementation stays under `lib/src/`: auth groups login and session, settings groups appearance, and home groups its pages/widgets. Bloc, event, and state files sit together in each feature's `bloc/`; login inputs/pages and presentation tests follow the same feature grouping.
