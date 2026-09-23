@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:core_common/core_common.dart';
+import 'package:core_network/src/mappers/network_failure_mapper.dart';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 
@@ -43,6 +45,15 @@ final class ApiRetryPolicy {
           'HEAD',
           'OPTIONS',
         }.contains(error.requestOptions.method.toUpperCase())) {
+      return null;
+    }
+    // A generic connection error may wrap a non-transient TLS/storage failure.
+    if (!{
+      FailureKind.network,
+      FailureKind.timeout,
+      FailureKind.server,
+      FailureKind.rateLimited,
+    }.contains(mapNetworkFailure(error).kind)) {
       return null;
     }
     final transient = switch (error.type) {

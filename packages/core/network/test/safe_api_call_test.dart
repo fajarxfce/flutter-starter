@@ -63,27 +63,26 @@ void main() {
     maxDelay: Duration.zero,
   );
 
-  test('supports sync, async, nullable and void results and supplies the caller token', () async {
-    final token = CancelToken();
-    final result = await safeApiCall((supplied) {
-      expect(supplied, same(token));
-      return 42;
-    }, cancelToken: token);
-    expect((result as Success<int>).value, 42);
-    expect(
-      (await safeApiCall((_) async => 'value') as Success<String>).value,
-      'value',
-    );
-    expect(
-      (await safeApiCall<String?>((_) => null) as Success<String?>).value,
-      isNull,
-    );
-    expect(await safeApiCall<void>((_) async {}), isA<Success<void>>());
-  });
+  test(
+    'supports ordinary callbacks with sync, async, nullable and void results',
+    () async {
+      final result = await safeApiCall(() => 42);
+      expect((result as Success<int>).value, 42);
+      expect(
+        (await safeApiCall(() async => 'value') as Success<String>).value,
+        'value',
+      );
+      expect(
+        (await safeApiCall<String?>(() => null) as Success<String?>).value,
+        isNull,
+      );
+      expect(await safeApiCall<void>(() async {}), isA<Success<void>>());
+    },
+  );
 
   test('never retries unless explicitly enabled', () async {
     var attempts = 0;
-    final result = await safeApiCall<void>((_) {
+    final result = await safeApiCall<void>(() {
       attempts++;
       throw _httpError();
     });
@@ -101,12 +100,16 @@ void main() {
       DioException(requestOptions: options, type: DioExceptionType.cancel),
       DioException(
         requestOptions: options,
+        type: DioExceptionType.transformTimeout,
+      ),
+      DioException(
+        requestOptions: options,
         type: DioExceptionType.badCertificate,
       ),
     ]) {
       var attempts = 0;
       expect(
-        await safeApiCall<void>((_) {
+        await safeApiCall<void>(() {
           attempts++;
           throw error;
         }, retry: retry),
@@ -118,7 +121,7 @@ void main() {
 
   test('transient read connection failures can recover', () async {
     var attempts = 0;
-    final result = await safeApiCall((_) {
+    final result = await safeApiCall(() {
       attempts++;
       if (attempts == 1) {
         throw DioException(
@@ -137,7 +140,7 @@ void main() {
       'retries transient $method reads up to the configured limit',
       () async {
         var attempts = 0;
-        final result = await safeApiCall((_) {
+        final result = await safeApiCall(() {
           attempts++;
           if (attempts < 3) throw _httpError(method: method);
           return 'ready';
@@ -153,7 +156,7 @@ void main() {
       'does not replay $method even when read retries are enabled',
       () async {
         var attempts = 0;
-        await safeApiCall<void>((_) {
+        await safeApiCall<void>(() {
           attempts++;
           throw _httpError(method: method);
         }, retry: retry);
@@ -178,7 +181,7 @@ void main() {
           },
         ),
       );
-      final result = await call<void>((_) {
+      final result = await call<void>(() {
         attempts++;
         Error.throwWithStackTrace(_httpError(), stack);
       }, retry: retry);
@@ -200,7 +203,7 @@ void main() {
         ),
       );
       final result = await call<void>(
-        (_) => throw TimeoutException('private request'),
+        () => throw TimeoutException('private request'),
       );
       expect((result as FailureResult<void>).failure.kind, FailureKind.timeout);
     },
@@ -209,7 +212,7 @@ void main() {
   test('pre-cancelled calls never execute the operation', () async {
     final token = CancelToken()..cancel('private reason');
     var called = false;
-    final result = await safeApiCall((_) {
+    final result = await safeApiCall(() {
       called = true;
       return 42;
     }, cancelToken: token);
@@ -221,8 +224,8 @@ void main() {
     'cancellation wins when an operation finishes in the same turn',
     () async {
       final token = CancelToken();
-      final result = await safeApiCall((supplied) {
-        supplied.cancel();
+      final result = await safeApiCall(() {
+        token.cancel();
         return 42;
       }, cancelToken: token);
       expect(
@@ -240,7 +243,7 @@ void main() {
       addTearDown(() => dio.close(force: true));
       final token = CancelToken();
       final pending = safeApiCall(
-        (supplied) => dio.get<Object>('/pending', cancelToken: supplied),
+        () => dio.get<Object>('/pending', cancelToken: token),
         cancelToken: token,
       );
       await adapter.started.future;
@@ -263,7 +266,7 @@ void main() {
       final started = Completer<void>();
       var attempts = 0;
       final pending = safeApiCall<void>(
-        (_) {
+        () {
           attempts++;
           started.complete();
           throw _httpError();
@@ -341,7 +344,7 @@ void main() {
 
   test('a server delay beyond the budget surfaces the failure without retrying early', () async {
     var attempts = 0;
-    final result = await safeApiCall<void>((_) {
+    final result = await safeApiCall<void>(() {
       attempts++;
       throw _httpError(status: 429, retryAfter: '60');
     }, retry: retry);

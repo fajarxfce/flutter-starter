@@ -42,10 +42,9 @@ final class RemoteAuthRepository implements AuthRepository {
     required String password,
   }) async {
     final generation = ++_generation;
-    final response = await _safeApiCall((token) async {
+    final response = await _safeApiCall(() async {
       final response = await _remote.login(
         LoginRequest(email: email, password: password),
-        cancelToken: token,
       );
       return (
         accessToken: response.accessToken,
@@ -95,8 +94,7 @@ final class RemoteAuthRepository implements AuthRepository {
       }
       if (stored == null) return const Success(null);
       final result = await _safeApiCall(
-        (token) async =>
-            (await _remote.currentUser(cancelToken: token)).toEntity(),
+        () async => (await _remote.currentUser()).toEntity(),
       );
       if (result case FailureResult<User>(:final failure)) {
         if (failure.kind == FailureKind.unauthorized && !_isStale(generation)) {

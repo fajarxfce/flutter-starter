@@ -173,25 +173,38 @@ The provider configures JSON content type, connection/send/receive timeouts, and
 
 ### Safe API and storage boundaries
 
-Core/network registers `SafeApiCall` as an Injectable lazy singleton. Repositories receive it through their constructors. Put transport, checked JSON decoding, and pure DTO-to-domain mapping inside the callback; it returns `Success<T>` or `FailureResult<T>`, including for synchronous exceptions, nullable results, and `void` operations.
+`SafeApiCall` executes a request and automatically converts exceptions into `FailureResult<T>`. Success returns `Success<T>`. Core/network registers it through Injectable; repositories receive it through their constructors and do not need to inspect Dio exceptions themselves.
+
+The normal callback takes no arguments:
 
 ```dart
 final result = await _safeApiCall(
-  (token) async =>
-      (await _remote.currentUser(cancelToken: token)).toEntity(),
-  retry: ApiRetryPolicy.readOnly(), // Explicit opt-in for a replayable read.
+  () async => (await _remote.currentUser()).toEntity(),
 );
 ```
 
-The default performs one attempt. `ApiRetryPolicy.readOnly` permits GET/HEAD/OPTIONS retries for connection/timeouts and HTTP 408, 429, 502, 503, or 504. It uses exponential backoff with equal jitter, bounded attempts (1–10), and a delay budget of at most one minute per retry. `Retry-After` seconds and HTTP dates set the minimum delay; a server delay exceeding the budget surfaces the failure immediately. Authentication, validation, certificate, cancellation, and decoding failures are not retried. Keep persistence and session mutations outside retried callbacks. The starter's login and session checks retain the default single attempt.
+Transport, checked JSON decoding, and DTO-to-domain mapping inside the callback share the same error boundary. Synchronous exceptions, asynchronous failures, nullable values, and `void` results are supported.
 
-Pass an optional `cancelToken` to `SafeApiCall` and forward the supplied callback token to Dio/Retrofit. Auth endpoints and the remote data source already accept it. Cancellation interrupts backoff and completes with `FailureKind.cancelled`; forwarding the token also stops the transport. Late completion/errors cannot replace that result. Request timeouts remain configured on Dio through `NetworkConfig`.
+`mapNetworkFailure` exhaustively handles all **nine** exception types in Dio 5.11.1. Adding a Dio enum value requires updating the switch at compile time.
 
-HTTP errors map to domain categories such as unauthorized, forbidden, not found, validation, conflict, and rate limited. Invalid JSON, checked deserialization errors, and mapping type errors become `invalidResponse`. Failure messages never copy server bodies or exception text. `NetworkConfig.onFailure` optionally receives the final API failure and stack trace once; observer errors cannot escape or replace the operation result.
+| Dio exception | Domain failure |
+|---|---|
+| `connectionTimeout`, `sendTimeout`, `receiveTimeout`, `transformTimeout` | `timeout` |
+| `badCertificate` | `security` |
+| `connectionError` | Classified underlying cause, or `network` |
+| `badResponse` | Classified HTTP response |
+| `cancel` | `cancelled` |
+| `unknown` | Classified nested cause, response fallback, or `unexpected` |
 
-Storage uses the pure Dart `safeStorageCall` helper from core/common, with an optional user-facing message. It preserves `FailureKind.storage` for keychain/preferences failures without adding network dependencies to settings. `Result.flatMap` chains successful steps and skips later work after a failure; callbacks should guard their own I/O. Auth and settings repositories contain no `try/catch` blocks.
+HTTP 400/422 map to validation, 401 to unauthorized, 403 to forbidden, 404 to not found, 408 to timeout, 409 to conflict, and 429 to rate limited. Every other 4xx maps to `request`; every 5xx maps to `server`. Missing, invalid, or otherwise rejected HTTP responses map to `invalidResponse`. Attached response metadata cannot override an explicit timeout, cancellation, or certificate failure.
 
-Auth keeps generation checks around asynchronous work: old login responses cannot undo logout, and stale 401 responses cannot clear a newer session. Credential failures in the HTTP interceptor remain storage failures. A 401 clears in-memory authentication; if credential removal fails, that storage failure is returned. Network failures preserve the token for a later attempt.
+Nested Dio errors and explicit infrastructure failures are inspected safely. On native platforms, socket/DNS, HTTP I/O and OS errors map to `network`; TLS/handshake/certificate errors map to `security`. Browser connection failures use Dio's `connectionError` type; conditional imports keep native APIs out of web builds. `FormatException`, checked JSON errors and mapping type errors become `invalidResponse`; genuinely unknown causes retain the `unexpected` fallback. Failure messages do not copy raw exception text or server bodies. `NetworkConfig.onFailure` can observe the final failure and stack trace without replacing the result if the observer throws.
+
+Storage uses the pure Dart `safeStorageCall` helper from core/common, with an optional user-facing message. It preserves `FailureKind.storage` for keychain/preferences failures. `Result.flatMap` continues successful steps and skips subsequent work after a failure; each I/O step uses its corresponding safe boundary. Auth and settings repositories contain no `try/catch` blocks, and keep their session-generation and persistence checks.
+
+Cancellation and retries are optional named arguments. `CancelToken` is Dio's request-stop signal: when an operation needs cancellation, pass the same token to Dio/Retrofit inside the closure and to `SafeApiCall`. Ordinary calls need no token. Cancellation also interrupts retry backoff and prevents late completion from replacing the result.
+
+The default performs one attempt. `ApiRetryPolicy.readOnly` opts replayable GET/HEAD/OPTIONS requests into retries for Dio connection/send/receive timeouts, connection errors, and HTTP 408, 429, 502, 503 or 504. Attempts are bounded (1–10), with exponential jitter and at most one minute of delay per retry. `Retry-After` seconds/dates set a minimum delay; an excessive server delay surfaces the failure. Transformation timeouts, authentication, validation, TLS/certificate, cancellation and decoding failures are not retried. Persistence and session mutations belong outside retried callbacks. The starter's login and session checks use the default single attempt.
 
 ### Generated navigation
 

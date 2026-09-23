@@ -8,7 +8,7 @@ dependency_overrides:
   bloc_test: ^10.0.0
   build_runner: ^2.10.0
   cupertino_icons: ^1.0.8
-  dio: ^5.9.0
+  dio: ^5.11.1
   fluent_ui: ^4.16.1
   flutter_bloc: ^9.1.1
   flutter_flavorizr: ^2.6.0

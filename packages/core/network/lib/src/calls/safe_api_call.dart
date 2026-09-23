@@ -18,48 +18,52 @@ final class SafeApiCall {
     'The request was cancelled.',
   );
 
-  /// Forward the supplied token to Dio/Retrofit to abort the underlying request.
+  /// Executes a request and automatically maps exceptions to domain failures.
+  /// Optional cancellation uses the same token passed to Dio/Retrofit by the caller.
   /// Retried callbacks must contain only replayable reads and pure mapping.
   Future<Result<T>> call<T>(
-    FutureOr<T> Function(CancelToken token) operation, {
+    FutureOr<T> Function() operation, {
     CancelToken? cancelToken,
     ApiRetryPolicy retry = const ApiRetryPolicy.none(),
   }) async {
-    final token = cancelToken ?? CancelToken();
     var attempts = 0;
     while (true) {
-      if (token.isCancelled) {
+      if (cancelToken?.isCancelled ?? false) {
         _report(_cancelled, StackTrace.current);
         return const FailureResult(_cancelled);
       }
       attempts++;
       try {
-        final value = await Future.any<T>([
-          Future<T>.sync(() => operation(token)),
-          token.whenCancel.then<T>((error) => throw error),
-        ]);
-        if (token.isCancelled) {
+        final pending = Future<T>.sync(operation);
+        final value = cancelToken == null
+            ? await pending
+            : await Future.any<T>([
+                pending,
+                cancelToken.whenCancel.then<T>((error) => throw error),
+              ]);
+        if (cancelToken?.isCancelled ?? false) {
           _report(_cancelled, StackTrace.current);
           return const FailureResult(_cancelled);
         }
         return Success(value);
       } on Object catch (error, stackTrace) {
-        final failure = token.isCancelled
-            ? _cancelled
-            : mapNetworkFailure(error);
-        final delay = token.isCancelled
-            ? null
-            : retry.delayAfter(error, attempts);
+        final cancelled = cancelToken?.isCancelled ?? false;
+        final failure = cancelled ? _cancelled : mapNetworkFailure(error);
+        final delay = cancelled ? null : retry.delayAfter(error, attempts);
         if (delay == null) {
           _report(failure, stackTrace);
           return FailureResult(failure);
         }
-        await _wait(delay, token);
+        await _wait(delay, cancelToken);
       }
     }
   }
 
-  Future<void> _wait(Duration duration, CancelToken token) async {
+  Future<void> _wait(Duration duration, CancelToken? token) async {
+    if (token == null) {
+      await Future<void>.delayed(duration);
+      return;
+    }
     final elapsed = Completer<void>();
     final timer = Timer(duration, elapsed.complete);
     try {

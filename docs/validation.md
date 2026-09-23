@@ -2,6 +2,18 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Automatic Dio failure mapping
+
+- Normal calls now use `safeApiCall(() => request())`. Cancellation remains optional; repository callbacks no longer receive or create a token by default.
+- The mapper exhaustively handles all nine `DioExceptionType` values in the installed Dio 5.11.1, including the previously missed `transformTimeout`. Certificate/TLS errors map to `security`; remaining HTTP 4xx statuses have a `request` fallback, all 5xx statuses map to `server`, and invalid/rejected response shapes map to `invalidResponse`.
+- Unknown/connection exceptions inspect nested causes, including native socket/DNS, HTTP I/O, OS and TLS exceptions. Cycle/depth guards keep custom exception wrappers bounded. Explicit timeout/cancellation/certificate types take precedence over attached HTTP metadata. TLS/storage causes are excluded from read retries.
+- `dart run melos run check --no-select`: passed with 147 tests, clean analysis, formatting, dependency policy, and architecture checks. Tests compare coverage against `DioExceptionType.values`, exercise every 4xx/5xx status, nested causes, native exception types, and existing app flows.
+- `flutter pub get --enforce-lockfile`: passed. The central Dio minimum now matches the already installed 5.11.1; all 173 resolved dependency versions are unchanged.
+- Melos generation passed and left all 14 generated source files unchanged.
+- Web dev release build passed, including the Wasm dry run, verifying that conditional exception mapping keeps native I/O APIs out of the web build.
+
+Native builds/integration were not repeated for this mapper and callback refactor; native exception mapping ran in Dart VM tests. Earlier native integration results are below.
+
 ## Safe API calls and storage boundaries
 
 - Added injected `SafeApiCall`, opt-in `ApiRetryPolicy.readOnly`, typed HTTP/decoding/cancellation failures, and an optional final-failure observer with stack traces. `safeStorageCall` and `Result.flatMap` remove repeated exception handling from auth/settings repositories.
