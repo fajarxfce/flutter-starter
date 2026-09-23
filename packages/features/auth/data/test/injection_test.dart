@@ -10,17 +10,29 @@ import 'package:test/test.dart';
 
 void main() {
   test(
-    'auth module supplies every use case without app registration',
+    'auth module supplies every use case using the qualified main API client',
     () async {
       final container = GetIt.asNewInstance();
       addTearDown(container.reset);
       final credentials = FakeCredentialStore();
       container.registerSingleton<CredentialStore>(credentials);
       container.registerSingleton(
-        const NetworkConfig(baseUrl: 'https://demo.invalid'),
+        BaseOptions(baseUrl: 'https://demo.invalid'),
+        instanceName: mainApi,
+      );
+      container.registerSingleton(
+        SafeLoggingInterceptor(null),
+        instanceName: mainApi,
       );
       container.registerSingleton<HttpClientAdapter>(
         DemoAdapter(latency: Duration.zero),
+        instanceName: mainApi,
+      );
+      // Decoys must never be selected by Retrofit or demo-session injection.
+      container.registerSingleton<Dio>(Dio()..close(force: true));
+      container.registerSingleton<Dio>(
+        Dio()..close(force: true),
+        instanceName: 'uploadApi',
       );
       await CoreNetworkPackageModule().init(GetItHelper(container));
       await AuthDataPackageModule().init(GetItHelper(container));

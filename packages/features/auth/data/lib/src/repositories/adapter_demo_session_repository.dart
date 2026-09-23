@@ -1,12 +1,13 @@
 import 'package:auth_data/src/datasources/demo/demo_adapter.dart';
 import 'package:auth_domain/auth_domain.dart';
 import 'package:core_common/core_common.dart';
+import 'package:core_network/core_network.dart';
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: DemoSessionRepository)
 final class AdapterDemoSessionRepository implements DemoSessionRepository {
-  AdapterDemoSessionRepository(this._dio);
+  AdapterDemoSessionRepository(@Named(mainApi) this._dio);
   final Dio _dio;
 
   @override

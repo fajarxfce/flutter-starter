@@ -20,14 +20,22 @@ Future<({AuthRepository repository, Dio dio, DemoAdapter adapter})> _create(
   final adapter = DemoAdapter(latency: Duration.zero);
   container.registerSingleton<CredentialStore>(credentials);
   container.registerSingleton(
-    const NetworkConfig(baseUrl: 'https://demo.invalid'),
+    BaseOptions(baseUrl: 'https://demo.invalid'),
+    instanceName: mainApi,
   );
-  container.registerSingleton<HttpClientAdapter>(adapter);
+  container.registerSingleton(
+    SafeLoggingInterceptor(null),
+    instanceName: mainApi,
+  );
+  container.registerSingleton<HttpClientAdapter>(
+    adapter,
+    instanceName: mainApi,
+  );
   await CoreNetworkPackageModule().init(GetItHelper(container));
   await AuthDataPackageModule().init(GetItHelper(container));
   return (
     repository: container<AuthRepository>(),
-    dio: container<Dio>(),
+    dio: container<Dio>(instanceName: mainApi),
     adapter: adapter,
   );
 }

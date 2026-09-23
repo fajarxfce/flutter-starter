@@ -1,10 +1,7 @@
-import 'package:core_network/src/config/network_config.dart';
 import 'package:dio/dio.dart';
-import 'package:injectable/injectable.dart';
 
-@lazySingleton
 final class SafeLoggingInterceptor extends Interceptor {
-  SafeLoggingInterceptor(NetworkConfig config) : _log = config.log;
+  SafeLoggingInterceptor(this._log);
   final void Function(String message)? _log;
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {

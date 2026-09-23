@@ -18,12 +18,20 @@ void main() {
     final container = GetIt.asNewInstance();
     containers.add(container);
     container.registerSingleton(
-      NetworkConfig(baseUrl: 'https://demo.invalid', log: log),
+      BaseOptions(baseUrl: 'https://demo.invalid'),
+      instanceName: mainApi,
+    );
+    container.registerSingleton(
+      SafeLoggingInterceptor(log),
+      instanceName: mainApi,
     );
     container.registerSingleton<CredentialStore>(store);
-    container.registerSingleton<HttpClientAdapter>(adapter);
+    container.registerSingleton<HttpClientAdapter>(
+      adapter,
+      instanceName: mainApi,
+    );
     await CoreNetworkPackageModule().init(GetItHelper(container));
-    return container<Dio>();
+    return container<Dio>(instanceName: mainApi);
   }
 
   setUp(() async {

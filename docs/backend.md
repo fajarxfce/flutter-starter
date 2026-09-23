@@ -37,4 +37,4 @@ Logout clears local credentials. There is no remote revocation endpoint or refre
 
 `DemoAdapter` returns this same wire format without network access. `demo@example.com` + `Demo123!` signs in; `timeout@example.com` simulates timeout and `server@example.com` simulates `503`. Other credentials return `401`. The home-screen expiry button makes the next `/auth/me` return `401`.
 
-Inject a different `HttpClientAdapter` or `CredentialStore` in tests. Repository tests verify JSON decoding, mappings, storage failures, session expiry, and login/logout races; presentation tests verify user-facing state and duplicate-submit protection.
+Inject a different `HttpClientAdapter` qualified with `mainApi`, or replace `CredentialStore`, in tests. Standalone network-module tests also provide `mainApi` bindings for `BaseOptions` and `SafeLoggingInterceptor`. Repository tests verify JSON decoding, mappings, storage failures, session expiry, and login/logout races; presentation tests verify user-facing state and duplicate-submit protection.

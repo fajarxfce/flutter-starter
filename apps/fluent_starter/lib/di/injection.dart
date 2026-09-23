@@ -61,13 +61,23 @@ abstract class AppModule {
   AppEnvironment environment(AppConfig config) =>
       AppEnvironment(label: config.label, isDemo: config.isDemo);
 
+  @Named(mainApi)
   @lazySingleton
-  NetworkConfig networkConfig(AppConfig config) => NetworkConfig(
+  BaseOptions mainApiOptions(AppConfig config) => BaseOptions(
     baseUrl: config.baseUrl,
-    log: kDebugMode ? debugPrint : null,
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+    sendTimeout: const Duration(seconds: 15),
+    contentType: Headers.jsonContentType,
   );
 
+  @Named(mainApi)
   @lazySingleton
-  HttpClientAdapter httpClientAdapter(AppConfig config) =>
+  SafeLoggingInterceptor mainApiLogging() =>
+      SafeLoggingInterceptor(kDebugMode ? debugPrint : null);
+
+  @Named(mainApi)
+  @lazySingleton
+  HttpClientAdapter mainApiAdapter(AppConfig config) =>
       config.isDemo ? DemoAdapter() : HttpClientAdapter();
 }

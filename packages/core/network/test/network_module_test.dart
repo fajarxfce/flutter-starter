@@ -47,27 +47,36 @@ void main() {
     adapter = _RecordingAdapter();
     logs = [];
     container.registerSingleton(
-      NetworkConfig(
+      BaseOptions(
         baseUrl: 'https://api.example.com',
         connectTimeout: const Duration(seconds: 2),
         receiveTimeout: const Duration(seconds: 3),
         sendTimeout: const Duration(seconds: 4),
-        log: logs.add,
+        contentType: Headers.jsonContentType,
       ),
+      instanceName: mainApi,
+    );
+    container.registerSingleton(
+      SafeLoggingInterceptor(logs.add),
+      instanceName: mainApi,
     );
     container.registerSingleton<CredentialStore>(
       FakeCredentialStore()..token = 'private-token',
     );
-    container.registerSingleton<HttpClientAdapter>(adapter);
+    container.registerSingleton<HttpClientAdapter>(
+      adapter,
+      instanceName: mainApi,
+    );
     await CoreNetworkPackageModule().init(GetItHelper(container));
   });
   tearDown(() => container.reset());
 
   test('generated providers share the configured client and transport', () {
-    final dio = container<Dio>();
-    expect(container<Dio>(), same(dio));
+    final dio = container<Dio>(instanceName: mainApi);
+    expect(container<Dio>(instanceName: mainApi), same(dio));
+    expect(container.isRegistered<Dio>(), isFalse);
     expect(dio.httpClientAdapter, same(adapter));
-    expect(dio.options, same(container<BaseOptions>()));
+    expect(dio.options, same(container<BaseOptions>(instanceName: mainApi)));
     expect(dio.options.baseUrl, 'https://api.example.com');
     expect(dio.options.connectTimeout, const Duration(seconds: 2));
     expect(dio.options.receiveTimeout, const Duration(seconds: 3));
@@ -76,7 +85,7 @@ void main() {
   });
 
   test('credentials are attached only to authenticated API requests', () async {
-    final dio = container<Dio>();
+    final dio = container<Dio>(instanceName: mainApi);
     await dio.get<Object>('/auth/me');
     await dio.post<Object>('/auth/login');
     await dio.post<Object>('https://api.example.com/auth/login?source=test');
@@ -92,7 +101,7 @@ void main() {
   });
 
   test('success and error logs omit request and credential details', () async {
-    final dio = container<Dio>();
+    final dio = container<Dio>(instanceName: mainApi);
     await dio.post<Object>(
       '/auth/login?email=private@example.com',
       data: {'password': 'private-password'},
@@ -111,9 +120,88 @@ void main() {
   });
 
   test(
+    'named clients isolate configuration, credentials, logs and disposal',
+    () async {
+      const uploadApi = 'uploadApi';
+      final uploadAdapter = _RecordingAdapter()..status = 429;
+      final uploadLogs = <String>[];
+      final uploadOptions = BaseOptions(
+        baseUrl: 'https://uploads.example.com',
+        sendTimeout: const Duration(seconds: 30),
+      );
+      final uploadClient = Dio(uploadOptions)
+        ..httpClientAdapter = uploadAdapter
+        ..interceptors.addAll([
+          CredentialInterceptor(
+            FakeCredentialStore()..token = 'upload-token',
+            baseUrl: uploadOptions.baseUrl,
+          ),
+          SafeLoggingInterceptor(uploadLogs.add),
+        ]);
+      container.registerSingleton<Dio>(
+        uploadClient,
+        instanceName: uploadApi,
+        dispose: (client) => client.close(force: true),
+      );
+      final mainClient = container<Dio>(instanceName: mainApi);
+      final secondaryClient = container<Dio>(instanceName: uploadApi);
+      expect(mainClient, isNot(same(secondaryClient)));
+      expect(mainClient.options, isNot(same(secondaryClient.options)));
+
+      final mainResult = await safeApiCall(
+        () => mainClient.get<Object>('/auth/me'),
+      );
+      final uploadResult = await safeApiCall(
+        () => secondaryClient.get<Object>('/files'),
+      );
+      expect(mainResult, isA<Success<Response<Object>>>());
+      expect(
+        (uploadResult as FailureResult<Response<Object>>).failure.kind,
+        FailureKind.rateLimited,
+      );
+      expect(adapter.requests.single.uri.host, 'api.example.com');
+      expect(adapter.requests.single.sendTimeout, const Duration(seconds: 4));
+      expect(
+        adapter.requests.single.headers['Authorization'],
+        'Bearer private-token',
+      );
+      expect(uploadAdapter.requests.single.uri.host, 'uploads.example.com');
+      expect(
+        uploadAdapter.requests.single.sendTimeout,
+        const Duration(seconds: 30),
+      );
+      expect(
+        uploadAdapter.requests.single.headers['Authorization'],
+        'Bearer upload-token',
+      );
+      expect(logs, ['HTTP GET', 'HTTP 200']);
+      expect(uploadLogs, ['HTTP GET', 'HTTP failure badResponse 429']);
+
+      uploadAdapter.status = 200;
+      await mainClient.get<Object>('https://uploads.example.com/auth/me');
+      await secondaryClient.get<Object>('https://api.example.com/auth/me');
+      expect(adapter.requests.last.headers, isNot(contains('Authorization')));
+      expect(
+        uploadAdapter.requests.last.headers,
+        isNot(contains('Authorization')),
+      );
+
+      await container.resetLazySingleton<Dio>(instanceName: mainApi);
+      expect(adapter.forceClosed, isTrue);
+      expect(uploadAdapter.closed, isFalse);
+      expect(
+        await safeApiCall(() => secondaryClient.get<Object>('/files')),
+        isA<Success<Response<Object>>>(),
+      );
+      await container.reset();
+      expect(uploadAdapter.forceClosed, isTrue);
+    },
+  );
+
+  test(
     'reset runs the generated Dio disposer and closes its transport',
     () async {
-      container<Dio>();
+      container<Dio>(instanceName: mainApi);
       expect(adapter.closed, isFalse);
       await container.reset();
       expect(adapter.closed, isTrue);

@@ -24,15 +24,19 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
     final authModule = _$AuthModule();
-    gh.lazySingleton<_i470.DemoSessionRepository>(
-      () => _i574.AdapterDemoSessionRepository(gh<_i361.Dio>()),
-    );
-    gh.lazySingleton<_i42.AuthApi>(() => _i42.AuthApi(gh<_i361.Dio>()));
-    gh.factory<_i470.ExpireDemoSession>(
-      () => authModule.expireDemoSession(gh<_i470.DemoSessionRepository>()),
+    gh.lazySingleton<_i42.AuthApi>(
+      () => _i42.AuthApi(gh<_i361.Dio>(instanceName: 'mainApi')),
     );
     gh.lazySingleton<_i471.AuthRemoteDataSource>(
       () => _i471.AuthRemoteDataSource(gh<_i42.AuthApi>()),
+    );
+    gh.lazySingleton<_i470.DemoSessionRepository>(
+      () => _i574.AdapterDemoSessionRepository(
+        gh<_i361.Dio>(instanceName: 'mainApi'),
+      ),
+    );
+    gh.factory<_i470.ExpireDemoSession>(
+      () => authModule.expireDemoSession(gh<_i470.DemoSessionRepository>()),
     );
     gh.lazySingleton<_i470.AuthRepository>(
       () => _i168.RemoteAuthRepository(

@@ -1,12 +1,9 @@
 import 'package:core_common/core_common.dart';
-import 'package:core_network/src/config/network_config.dart';
 import 'package:dio/dio.dart';
-import 'package:injectable/injectable.dart';
 
-@lazySingleton
 final class CredentialInterceptor extends Interceptor {
-  CredentialInterceptor(this.credentials, NetworkConfig config)
-    : origin = Uri.parse(config.baseUrl).origin;
+  CredentialInterceptor(this.credentials, {required String baseUrl})
+    : origin = Uri.parse(baseUrl).origin;
   final CredentialStore credentials;
   final String origin;
   @override

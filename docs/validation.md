@@ -2,6 +2,16 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Named Dio clients
+
+- Removed `NetworkConfig`. App bindings now supply `BaseOptions`, the transport adapter, and a logging interceptor under `@Named(mainApi)`. Core/network constructs the named Dio and credential interceptor. Retrofit auth and the demo-session repository explicitly select that client.
+- Credential and logging interceptors accept their dependencies directly and can be constructed separately for each backend. The app configures one production client; regression fixtures add a second named client with a different origin, timeout, credential store, and logger.
+- `dart run melos run check --no-select`: passed with 131 tests, clean analysis, formatting, dependency policy, and architecture checks. Tests verify separate client configuration, origin-restricted credentials, independent logging, use of the public safe-call function with either client, and independent disposal. Auth's generated module still performs login/restore/expiry/logout when unrelated named and unnamed Dio instances are registered.
+- Melos generation passed. All 14 generated source files remained byte-for-byte unchanged on a second run, matching CI's regeneration check.
+- Web dev release build passed, including Flutter's Wasm dry run.
+
+Native builds and integration were not repeated for this DI refactor; earlier results are recorded below.
+
 ## Public safe API function
 
 - Replaced the injected `SafeApiCall` class with the public `safeApiCall` function. Removed retry/backoff orchestration, helper-managed cancellation, `NetworkConfig.onFailure`, and the unused direct HTTP-date parser dependency. Each callback runs once; cancellation is passed directly to Dio/Retrofit.

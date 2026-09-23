@@ -37,14 +37,20 @@ extension GetItInjectableX on _i174.GetIt {
     await _i201.SettingsDataPackageModule().init(gh);
     await _i1029.SettingsPresentationPackageModule().init(gh);
     final appModule = _$AppModule();
-    gh.lazySingleton<_i699.AppEnvironment>(
-      () => appModule.environment(gh<_i209.AppConfig>()),
-    );
-    gh.lazySingleton<_i309.NetworkConfig>(
-      () => appModule.networkConfig(gh<_i209.AppConfig>()),
+    gh.lazySingleton<_i361.BaseOptions>(
+      () => appModule.mainApiOptions(gh<_i209.AppConfig>()),
+      instanceName: 'mainApi',
     );
     gh.lazySingleton<_i361.HttpClientAdapter>(
-      () => appModule.httpClientAdapter(gh<_i209.AppConfig>()),
+      () => appModule.mainApiAdapter(gh<_i209.AppConfig>()),
+      instanceName: 'mainApi',
+    );
+    gh.lazySingleton<_i309.SafeLoggingInterceptor>(
+      () => appModule.mainApiLogging(),
+      instanceName: 'mainApi',
+    );
+    gh.lazySingleton<_i699.AppEnvironment>(
+      () => appModule.environment(gh<_i209.AppConfig>()),
     );
     gh.lazySingleton<_i749.SessionGuard>(
       () => _i749.SessionGuard(gh<_i612.SessionBloc>()),

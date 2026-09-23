@@ -7,7 +7,6 @@
 import 'dart:async' as _i687;
 
 import 'package:core_common/core_common.dart' as _i699;
-import 'package:core_network/src/config/network_config.dart' as _i129;
 import 'package:core_network/src/di/injection.dart' as _i833;
 import 'package:core_network/src/interceptors/credential_interceptor.dart'
     as _i155;
@@ -21,25 +20,21 @@ class CoreNetworkPackageModule extends _i526.MicroPackageModule {
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
     final networkModule = _$NetworkModule();
-    gh.lazySingleton<_i361.BaseOptions>(
-      () => networkModule.options(gh<_i129.NetworkConfig>()),
-    );
-    gh.lazySingleton<_i231.SafeLoggingInterceptor>(
-      () => _i231.SafeLoggingInterceptor(gh<_i129.NetworkConfig>()),
-    );
     gh.lazySingleton<_i155.CredentialInterceptor>(
-      () => _i155.CredentialInterceptor(
+      () => networkModule.mainApiCredentials(
         gh<_i699.CredentialStore>(),
-        gh<_i129.NetworkConfig>(),
+        gh<_i361.BaseOptions>(instanceName: 'mainApi'),
       ),
+      instanceName: 'mainApi',
     );
     gh.lazySingleton<_i361.Dio>(
-      () => networkModule.dio(
-        gh<_i361.BaseOptions>(),
-        gh<_i361.HttpClientAdapter>(),
-        gh<_i155.CredentialInterceptor>(),
-        gh<_i231.SafeLoggingInterceptor>(),
+      () => networkModule.mainApiDio(
+        gh<_i361.BaseOptions>(instanceName: 'mainApi'),
+        gh<_i361.HttpClientAdapter>(instanceName: 'mainApi'),
+        gh<_i155.CredentialInterceptor>(instanceName: 'mainApi'),
+        gh<_i231.SafeLoggingInterceptor>(instanceName: 'mainApi'),
       ),
+      instanceName: 'mainApi',
       dispose: _i833.disposeDio,
     );
   }

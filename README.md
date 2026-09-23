@@ -155,21 +155,30 @@ Pages and views render presentation state and dispatch Bloc events. They do not 
 
 `@InjectableInit.microPackage` generates registrations from the package's annotations. Annotate constructors/classes directly for data sources, repositories, Blocs, and the Retrofit factory. Handwritten `@module` bindings are needed for third-party constructors and pure domain classes that cannot carry DI annotations. Each feature data package groups its use-case bindings in its existing `injection.dart`: `AuthModule` for auth and `SettingsModule` for settings. Domain classes retain constructor injection without importing a DI framework.
 
-Adding a use case to an existing feature changes that feature's bindings and generated micro-package module. `AppModule` supplies only shared runtime configuration and transport; the app composes the generated modules. `NetworkModule` constructs Dio and its options in core/network. Each feature module can be initialized with its required infrastructure dependencies and tested without app composition.
+Adding a use case to an existing feature changes that feature's bindings and generated micro-package module. `AppModule` supplies only shared runtime configuration and transport; the app composes the generated modules. `NetworkModule` constructs the named Dio client in core/network; app bindings supply its `BaseOptions`, transport adapter, and logging interceptor. Each feature module can be initialized with its required infrastructure dependencies and tested without app composition.
 
 | Owner | Injectable registrations |
 |---|---|
-| Core network `lib/src/di/injection.dart` and annotated interceptors | Lazy singleton `BaseOptions`, `Dio`, credential interceptor, and safe logging interceptor |
+| Core network `lib/src/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
 | Auth data `lib/src/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, and `ExpireDemoSession`; lazy singleton API, data source, and repository implementations |
 | Auth presentation | Factory `LoginBloc` and shared `SessionBloc`, receiving domain use cases |
 | Settings data `lib/src/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
 | Settings presentation | Shared `AppearanceBloc`, receiving settings use cases |
-| App `lib/di/injection.dart` | `AppEnvironment`, `NetworkConfig` from the flavor/backend config, and `HttpClientAdapter`: demo transport or Dio's platform adapter |
+| App `lib/di/injection.dart` | `AppEnvironment`; `mainApi` bindings for `BaseOptions`, safe logging interceptor, and `HttpClientAdapter` (demo or platform transport) |
 | App routing | Shared `AppRouter` and `SessionGuard` |
 
-The provider configures JSON content type, connection/send/receive timeouts, and interceptors. Authentication headers are restricted to the API origin and omitted from login requests. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, repository session stream, and Dio transport when the container is reset.
+The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named credential and logging interceptors. Authentication headers are restricted to the API origin and omitted from login requests. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, repository session stream, and Dio transport when the container is reset.
 
-`AuthApi` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module.
+`AuthApi` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. `@Named(mainApi)` selects its Dio instance. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module. The demo-session repository selects the same named client.
+
+Each client owns its `BaseOptions`, adapter, and interceptor instances. There is no `NetworkConfig` wrapper or unqualified Dio registration. The starter configures one backend client. To add another backend:
+
+1. Add its qualifier beside `mainApi` in core/network's `src/di/network_clients.dart`.
+2. Supply that client's named `BaseOptions`, adapter, and logging binding in the existing app `injection.dart`.
+3. Add its named Dio provider in the existing `NetworkModule`, with `@LazySingleton(dispose: disposeDio)`. Select credentials and interceptors for that backend; `CredentialInterceptor` accepts a store and the client's base URL, while `SafeLoggingInterceptor` accepts a logging callback. Their constructors have no fixed client qualifier, so each provider can create separate instances.
+4. Select the qualifier on that backend's Retrofit constructor and regenerate. Feature domain, repositories' error boundaries, and `safeApiCall` need no client-specific configuration.
+
+Qualify provider parameters as well as return registrations. Tests exercise two clients with separate URLs, timeouts, credentials, logs, and disposal. Auth DI tests include unrelated named and unnamed clients to verify that generated factories select `mainApi`.
 
 ### Safe API and storage boundaries
 

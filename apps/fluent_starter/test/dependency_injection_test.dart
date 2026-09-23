@@ -2,6 +2,7 @@ import 'package:auth_data/auth_data.dart';
 import 'package:auth_domain/auth_domain.dart';
 import 'package:auth_presentation/auth_presentation.dart';
 import 'package:core_common/core_common.dart';
+import 'package:core_network/core_network.dart';
 import 'package:core_testing/core_testing.dart';
 import 'package:dio/dio.dart';
 import 'package:fluent_starter/config/app_config.dart';
@@ -30,7 +31,10 @@ void main() {
       expect(repository, isA<RemoteAuthRepository>());
       expect(container<AuthRepository>(), same(repository));
       expect(container<SessionGuard>().session, same(container<SessionBloc>()));
-      expect(container<HttpClientAdapter>(), isA<DemoAdapter>());
+      expect(
+        container<HttpClientAdapter>(instanceName: mainApi),
+        isA<DemoAdapter>(),
+      );
 
       final bloc = container<LoginBloc>();
       final secondBloc = container<LoginBloc>();
@@ -79,7 +83,7 @@ void main() {
         preferences: FakePreferenceStore(),
       );
       addTearDown(container.reset);
-      final dio = container<Dio>();
+      final dio = container<Dio>(instanceName: mainApi);
       expect(dio.httpClientAdapter, isNot(isA<DemoAdapter>()));
       expect(dio.options.baseUrl, 'https://api.example.com');
     },
