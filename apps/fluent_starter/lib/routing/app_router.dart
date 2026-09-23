@@ -16,6 +16,10 @@ class AppRouter extends RootStackRouter {
       page: HomeRoute.page,
       path: '/home',
       guards: [sessionGuard],
+      children: [
+        AutoRoute(page: OverviewRoute.page, path: ''),
+        AutoRoute(page: PreferencesRoute.page, path: 'preferences'),
+      ],
     ),
     RedirectRoute(path: '*', redirectTo: '/home'),
   ];

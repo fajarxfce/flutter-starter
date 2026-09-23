@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:core_testing/core_testing.dart';
 import 'package:fluent_starter/app.dart';
 import 'package:fluent_starter/app_services.dart';
 import 'package:fluent_starter/config/app_config.dart';
 import 'package:fluent_starter/di/app_services_factory.dart';
 import 'package:fluent_starter/routing/app_router.dart';
+import 'package:fluent_starter/routing/app_router.gr.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,9 +54,9 @@ void main() {
     expect(services.repository.currentUser, isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
-  testWidgets('protected deep link retains query after login', (tester) async {
+  testWidgets('protected nested route is restored after login', (tester) async {
     tester.binding.platformDispatcher.defaultRouteNameTestValue =
-        '/home?section=preferences';
+        '/home/preferences';
     addTearDown(
       tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
     );
@@ -63,6 +66,35 @@ void main() {
     await tester.pumpAndSettle();
     await signIn(tester);
     expect(find.text('Appearance'), findsOneWidget);
+    expect(router.currentUrl, '/home/preferences');
+    expect(router.topRoute.name, PreferencesRoute.name);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('Fluent menu, typed routes and back share nested route state', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      FluentStarterApp(services: services, router: router),
+    );
+    await tester.pumpAndSettle();
+    await signIn(tester);
+    expect(router.currentUrl, '/home');
+    await tester.tap(find.text('Preferences'));
+    await tester.pumpAndSettle();
+    expect(find.text('Appearance'), findsOneWidget);
+    expect(router.currentUrl, '/home/preferences');
+    expect(await router.maybePopTop(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
+    expect(router.currentUrl, '/home');
+    unawaited(router.navigate(const HomeRoute(children: [PreferencesRoute()])));
+    await tester.pumpAndSettle();
+    expect(find.text('Appearance'), findsOneWidget);
+    expect(router.currentUrl, '/home/preferences');
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('expired session removes the protected page', (tester) async {
