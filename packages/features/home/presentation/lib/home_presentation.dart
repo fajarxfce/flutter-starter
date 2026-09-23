@@ -1,2 +1,2 @@
-export 'src/views/home_view.dart';
-export 'src/widgets/home_overview.dart';
+export 'src/home/pages/home_view.dart';
+export 'src/home/widgets/home_overview.dart';

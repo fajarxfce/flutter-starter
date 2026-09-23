@@ -91,11 +91,20 @@ List<String> checkArchitecture(Directory root) {
       final relativePath = p.posix.joinAll(
         p.split(p.relative(file.path, from: lib.path)),
       );
+      if (name.endsWith('_presentation') &&
+          relativePath != '$name.dart' &&
+          !relativePath.startsWith('src/') &&
+          !relativePath.startsWith('di/')) {
+        errors.add(
+          '$name/$relativePath: presentation features belong in lib/src; '
+          'keep DI in lib/di',
+        );
+      }
       final ui =
           relativePath == 'app.dart' ||
-          relativePath.startsWith('routing/pages/') ||
-          relativePath.startsWith('src/views/') ||
-          relativePath.startsWith('src/widgets/');
+          p.posix
+              .split(relativePath)
+              .any({'pages', 'views', 'widgets'}.contains);
       final generated = RegExp(r'\.(g|gr|freezed|config|module)\.dart$')
           .hasMatch(file.path);
       if (relativePath == '$name.dart' &&
@@ -128,7 +137,8 @@ List<String> checkArchitecture(Directory root) {
             .whereType<String>()
             .where((name) => !name.startsWith('_'))
             .toList();
-        if (publicTypes.length > 1) {
+        if (publicTypes.length > 1 &&
+            !_isSealedFamily(unit, publicTypes.length)) {
           errors.add(
             '$name/$relativePath: split public types into separate files: '
             '${publicTypes.join(', ')}',
@@ -246,6 +256,27 @@ List<String> checkArchitecture(Directory root) {
     visit(name);
   }
   return errors;
+}
+
+bool _isSealedFamily(CompilationUnit unit, int publicTypeCount) {
+  final classes = unit.declarations
+      .whereType<ClassDeclaration>()
+      .where((node) => !node.namePart.typeName.lexeme.startsWith('_'))
+      .toList();
+  if (classes.length != publicTypeCount) return false;
+  final roots = classes.where((node) => node.sealedKeyword != null).toList();
+  if (roots.length != 1) return false;
+  final root = roots.single;
+  final rootName = root.namePart.typeName.lexeme;
+  bool inheritsRoot(NamedType type) =>
+      type.importPrefix == null && type.name.lexeme == rootName;
+  return classes.every(
+    (node) =>
+        identical(node, root) ||
+        (node.extendsClause != null &&
+            inheritsRoot(node.extendsClause!.superclass)) ||
+        (node.implementsClause?.interfaces.any(inheritsRoot) ?? false),
+  );
 }
 
 void main() {

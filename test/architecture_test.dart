@@ -28,6 +28,35 @@ void main() {
         .writeAsStringSync("import 'package:core_common/core_common.dart';");
     expect(checkArchitecture(root), isEmpty);
   });
+  test('presentation accepts feature sources under src and DI beside src', () {
+    File(p.join(root.path, 'domain/pubspec.yaml')).writeAsStringSync(
+      'name: auth_presentation\ndependencies: {core_common: any}\n',
+    );
+    for (final entry in {
+      'auth_presentation.dart': "export 'src/login/bloc/login_event.dart';",
+      'di/injection.dart': 'void configureAuthPresentationPackage() {}',
+      'src/login/bloc/login_event.dart': 'sealed class LoginEvent {}\nfinal class LoginSubmitted extends LoginEvent {}',
+    }.entries) {
+      final file = File(p.join(root.path, 'domain/lib', entry.key));
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(entry.value);
+    }
+    expect(checkArchitecture(root), isEmpty);
+  });
+  test('presentation rejects feature sources outside src', () {
+    File(p.join(root.path, 'domain/pubspec.yaml')).writeAsStringSync(
+      'name: auth_presentation\ndependencies: {core_common: any}\n',
+    );
+    final file = File(
+      p.join(root.path, 'domain/lib/login/bloc/login_bloc.dart'),
+    );
+    file.parent.createSync(recursive: true);
+    file.writeAsStringSync('class LoginBloc {}');
+    expect(
+      checkArchitecture(root),
+      contains(contains('presentation features belong in lib/src')),
+    );
+  });
   test('rejects framework and conditional platform imports', () {
     File(p.join(root.path, 'domain/lib/domain.dart')).writeAsStringSync(
       "import 'package:flutter/widgets.dart';\nimport 'stub.dart' if (dart.library.io) 'dart:io';",
@@ -60,6 +89,34 @@ void main() {
       'class User {}\nabstract interface class AuthRepository {}',
     );
     expect(checkArchitecture(root), contains(contains('split public types')));
+  });
+  test('accepts a sealed event family in one source file', () {
+    File(p.join(root.path, 'domain/lib/login_event.dart')).writeAsStringSync('''
+sealed class LoginEvent {}
+final class LoginSubmitted extends LoginEvent {}
+final class LoginCancelled implements LoginEvent {}
+''');
+    expect(checkArchitecture(root), isEmpty);
+  });
+  test('sealed family exception still rejects unrelated public types', () {
+    for (final unrelated in [
+      'class LoginRepository {}',
+      'enum LoginStatus { idle }',
+      'sealed class SessionEvent {}',
+      'final class OtherSubmitted extends other.LoginEvent {}',
+    ]) {
+      File(p.join(root.path, 'domain/lib/login_event.dart'))
+          .writeAsStringSync('''
+sealed class LoginEvent {}
+final class LoginSubmitted extends LoginEvent {}
+$unrelated
+''');
+      expect(
+        checkArchitecture(root),
+        contains(contains('split public types')),
+        reason: unrelated,
+      );
+    }
   });
   test('accepts export barrels, private companions and generated types', () {
     File(p.join(root.path, 'domain/lib/auth_domain.dart'))
@@ -128,11 +185,33 @@ const explanation = 'Cubit, ValueNotifier and StatefulWidget';
   });
   void writeView(String source) {
     final file = File(
-      p.join(root.path, 'domain/lib/src/views/example_view.dart'),
+      p.join(root.path, 'domain/lib/login/pages/login_view.dart'),
     );
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(source);
   }
+
+  test('UI checks cover feature folders and shared or app widgets', () {
+    for (final path in [
+      'login/pages/login_view.dart',
+      'login/widgets/login_form.dart',
+      'src/views/example_view.dart',
+      'src/widgets/example_widget.dart',
+      'routing/pages/example_page.dart',
+    ]) {
+      final file = File(p.join(root.path, 'domain/lib', path));
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(
+        'class View { void submit() => repository.login(); }',
+      );
+      expect(
+        checkArchitecture(root),
+        contains('auth_domain/$path: UI must not declare logic/helper methods'),
+        reason: path,
+      );
+      file.deleteSync();
+    }
+  });
 
   test('UI rejects async handlers and helper methods', () {
     writeView(

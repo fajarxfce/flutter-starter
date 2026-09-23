@@ -74,7 +74,7 @@ To add a library, declare it as `any` in the consuming package and add its const
 1. Create packages under `packages/features/<feature>/{domain,data,presentation}` as needed, with unique package names, `resolution: workspace`, `publish_to: none`, and the shared SDK constraint.
 2. Register each package in root `workspace` and update the dependency allowlist in `tool/check_architecture.dart`.
 3. Define entities, repository interfaces, and use cases in domain; implement DTOs/transport/mapping in data; inject use cases into event-driven presentation Blocs.
-4. Annotate data implementations and Blocs. Add one `lib/src/di/injection.dart` per participating package with `@InjectableInit.microPackage`, generate it, and include its module in the app's `lib/di/injection.dart`. Group pure domain use-case bindings in a single `@module` inside the feature data package's `injection.dart`. Add `@RoutePage` adapters and route declarations; keep cross-feature coordination in the app.
+4. Annotate data implementations and Blocs. Add one `lib/di/injection.dart` per participating package with `@InjectableInit.microPackage`, generate it, and include its module in the app's `lib/di/injection.dart`. Group pure domain use-case bindings in a single `@module` inside the feature data package's `injection.dart`. Add `@RoutePage` adapters and route declarations; keep cross-feature coordination in the app.
 5. Generate code, add behavior tests, and run the quality gate. Never access another package's `lib/src`.
 
 Use cases return `Success<T>` or `FailureResult<T>`. Data exceptions and DTOs never reach presentation. Freezed handles presentation state; JsonSerializable handles wire models. Domain models are plain Dart.
@@ -92,52 +92,57 @@ features/auth/domain/lib/
   src/usecases/logout.dart
   src/usecases/restore_session.dart
 
-features/auth/data/lib/src/
-  dto/user_dto.dart
-  requests/login_request.dart
-  responses/login_response.dart
-  models/auth_session.dart
-  datasources/local/auth_local_data_source.dart
-  datasources/remote/auth_api.dart
-  datasources/remote/auth_remote_data_source.dart
-  datasources/demo/demo_adapter.dart
+features/auth/data/lib/
   di/injection.dart
-  mappers/user_mapper.dart
-  mappers/auth_session_mapper.dart
-  repositories/remote_auth_repository.dart
+  src/dto/user_dto.dart
+  src/requests/login_request.dart
+  src/responses/login_response.dart
+  src/models/auth_session.dart
+  src/datasources/local/auth_local_data_source.dart
+  src/datasources/remote/auth_api.dart
+  src/datasources/remote/auth_remote_data_source.dart
+  src/datasources/demo/demo_adapter.dart
+  src/mappers/user_mapper.dart
+  src/mappers/auth_session_mapper.dart
+  src/repositories/remote_auth_repository.dart
 
-features/auth/presentation/lib/src/
-  inputs/{email_input,password_input,input_error}.dart
-  state/login_state.dart
-  bloc/login_bloc.dart
-  events/login_event.dart
-  events/{login_email_changed,login_password_changed,login_submitted}.dart
+features/auth/presentation/lib/
   di/injection.dart
-  views/login_view.dart
-  session/bloc/session_bloc.dart
-  session/state/session_state.dart
-  session/events/session_event.dart
+  src/login/bloc/login_bloc.dart
+  src/login/bloc/login_event.dart
+  src/login/bloc/login_state.dart
+  src/login/inputs/{email_input,password_input,input_error}.dart
+  src/login/pages/login_view.dart
+  src/session/bloc/session_bloc.dart
+  src/session/bloc/session_event.dart
+  src/session/bloc/session_state.dart
 
 features/settings/domain/lib/src/
   entities/app_theme_mode.dart
   repositories/settings_repository.dart
   usecases/{load_theme,save_theme}.dart
 
-features/settings/data/lib/src/
-  repositories/local_settings_repository.dart
+features/settings/data/lib/
   di/injection.dart
+  src/repositories/local_settings_repository.dart
 
-features/settings/presentation/lib/src/
-  bloc/appearance_bloc.dart
-  events/appearance_event.dart
-  state/appearance_state.dart
+features/settings/presentation/lib/
   di/injection.dart
-  views/appearance_view.dart
+  src/appearance/bloc/appearance_bloc.dart
+  src/appearance/bloc/appearance_event.dart
+  src/appearance/bloc/appearance_state.dart
+  src/appearance/pages/appearance_view.dart
+
+features/home/presentation/lib/
+  src/home/pages/home_view.dart
+  src/home/widgets/home_overview.dart
 ```
 
 Core packages follow the same convention: storage contracts and implementations, HTTP interceptors, failure mappers, theme, spacing tokens, widgets, and test fakes each have their own files. App composition separates configuration, DI registration, bootstrap, router, guards, and pages.
 
-The architecture check enforces export-only package barrels and one public type per handwritten source file. It rejects feature service-locator imports and DI imports in domain. Private implementation companions are allowed outside UI; generated files follow generator conventions. Sealed result/event variants live in separate physical files connected with `part` so each hierarchy remains in one library. Keep each model's generated `part` next to that model; do not collect models or use cases in a barrel.
+Presentation code lives under `lib/src/<feature>/`, with Bloc, state, and event files together in `bloc/`. Inputs, pages, and widgets belong to that feature. All variants of one event family live in its `_event.dart`; Freezed state output stays beside its state source. Presentation tests mirror the feature folders. Each participating package keeps its Injectable entry point and generated module in `lib/di/`.
+
+The architecture check requires presentation feature sources under `lib/src/`, with exceptions for the package barrel and `lib/di/`. It enforces export-only package barrels and separates unrelated public types. A sealed base and its direct variants may share a file, which allows an event family to be read together. Private implementation companions are allowed outside UI; generated files follow generator conventions. Feature service-locator imports and DI imports in domain remain forbidden. Keep each model's generated `part` next to that model; do not collect models or use cases in a barrel.
 
 ### UI contains rendering and event bindings only
 
@@ -148,13 +153,13 @@ Pages and views render presentation state and dispatch Bloc events. They do not 
 - `AppearanceBloc` owns theme loading, conversion to Flutter theme mode, and ordered persistence through settings use cases. Storage failures keep the chosen theme for the current session and expose feedback in state.
 - `AppRouter` observes authentication transitions and coordinates protected navigation with `SessionGuard`. UI has no sign-in completion callback or session subscription.
 
-`tool/ui_architecture_visitor.dart` checks UI source for helper methods/functions, asynchronous work, imperative decisions, assignments, and subscription/state-management calls. The package checker also rejects UI imports of domain, data, storage ports, DI, and transport. `app.dart`, route pages, and feature views/widgets are covered by these checks.
+`tool/ui_architecture_visitor.dart` checks UI source for helper methods/functions, asynchronous work, imperative decisions, assignments, and subscription/state-management calls. The package checker also rejects UI imports of domain, data, storage ports, DI, and transport. `app.dart` and files under any `pages/`, `views/`, or `widgets/` directory are covered, including folders nested inside individual features.
 
 `tool/bloc_architecture_visitor.dart` checks every handwritten production file, including files outside UI folders. It rejects references to `Cubit`, `setState`, `StatefulWidget`, `StatefulBuilder`, `ChangeNotifier`, `ValueNotifier`, `ValueListenableBuilder`, and `ListenableBuilder`, plus Flutter `State` inheritance/aliases. Constructor calls, prefixed names, mixins, and tear-offs are covered. Framework and generated widget internals are outside this rule.
 
 ### Dependency injection and HTTP providers
 
-`apps/fluent_starter/lib/di/injection.dart` includes five generated micro-package modules. Each participating package has one `lib/src/di/injection.dart` entry point. Runtime `AppConfig`, `CredentialStore`, and `PreferenceStore` are supplied at the app boundary, allowing platform stores to be replaced in tests. The container also registers itself for route composition. Application dependencies are generated by Injectable. Session and appearance startup events finish before the app mounts.
+`apps/fluent_starter/lib/di/injection.dart` includes five generated micro-package modules. Each participating package has one `lib/di/injection.dart` entry point. Runtime `AppConfig`, `CredentialStore`, and `PreferenceStore` are supplied at the app boundary, allowing platform stores to be replaced in tests. The container also registers itself for route composition. Application dependencies are generated by Injectable. Session and appearance startup events finish before the app mounts.
 
 `@InjectableInit.microPackage` generates registrations from the package's annotations. Annotate constructors/classes directly for data sources, repositories, Blocs, and the Retrofit factory. Handwritten `@module` bindings are needed for third-party constructors and pure domain classes that cannot carry DI annotations. Each feature data package groups its use-case bindings in its existing `injection.dart`: `AuthModule` for auth and `SettingsModule` for settings. Domain classes retain constructor injection without importing a DI framework.
 
@@ -162,10 +167,10 @@ Adding a use case to an existing feature changes that feature's bindings and gen
 
 | Owner | Injectable registrations |
 |---|---|
-| Core network `lib/src/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
-| Auth data `lib/src/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
+| Core network `lib/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
+| Auth data `lib/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
 | Auth presentation | Factory `LoginBloc` and shared `SessionBloc`, receiving domain use cases |
-| Settings data `lib/src/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
+| Settings data `lib/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
 | Settings presentation | Shared `AppearanceBloc`, receiving settings use cases |
 | App `lib/di/injection.dart` | `AppEnvironment`; `mainApi` bindings for `BaseOptions`, safe logging interceptor, and `HttpClientAdapter` (demo or platform transport) |
 | App routing | Shared `AppRouter` and `SessionGuard` |
@@ -176,7 +181,7 @@ The main client uses JSON content type and explicit connection/send/receive time
 
 Each client owns its `BaseOptions`, adapter, and interceptor instances. There is no `NetworkConfig` wrapper or unqualified Dio registration. The starter configures one backend client. To add another backend:
 
-1. Add its qualifier beside `mainApi` in core/network's `src/di/network_clients.dart`.
+1. Add its qualifier beside `mainApi` in core/network's `di/network_clients.dart`.
 2. Supply that client's named `BaseOptions`, adapter, and logging binding in the existing app `injection.dart`.
 3. Add its named Dio provider in the existing `NetworkModule`, with `@LazySingleton(dispose: disposeDio)`. Select credentials and interceptors for that backend; `CredentialInterceptor` accepts a store and the client's base URL, while `SafeLoggingInterceptor` accepts a logging callback. Their constructors have no fixed client qualifier, so each provider can create separate instances.
 4. Select the qualifier on that backend's Retrofit constructor and regenerate. Feature domain, repositories' error boundaries, and `safeApiCall` need no client-specific configuration.

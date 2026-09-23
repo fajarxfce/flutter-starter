@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:auth_domain/auth_domain.dart';
-import 'package:auth_presentation/src/session/events/session_event.dart';
-import 'package:auth_presentation/src/session/state/session_state.dart';
+import 'package:auth_presentation/src/session/bloc/session_event.dart';
+import 'package:auth_presentation/src/session/bloc/session_state.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:core_common/core_common.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

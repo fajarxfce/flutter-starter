@@ -1,5 +1,5 @@
-export 'src/bloc/appearance_bloc.dart';
-export 'src/di/injection.module.dart';
-export 'src/events/appearance_event.dart';
-export 'src/state/appearance_state.dart';
-export 'src/views/appearance_view.dart';
+export 'di/injection.module.dart';
+export 'src/appearance/bloc/appearance_bloc.dart';
+export 'src/appearance/bloc/appearance_event.dart';
+export 'src/appearance/bloc/appearance_state.dart';
+export 'src/appearance/pages/appearance_view.dart';

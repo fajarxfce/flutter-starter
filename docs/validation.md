@@ -2,6 +2,17 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Presentation grouped by feature
+
+- Presentation implementation stays under `lib/src/`: auth groups login and session, settings groups appearance, and home groups its pages/widgets. Bloc, event, and state files sit together in each feature's `bloc/`; login inputs/pages and presentation tests follow the same feature grouping.
+- Each event family now occupies one file. The architecture checker permits a sealed root and its direct variants together while still rejecting unrelated public types. UI checks cover nested feature pages/widgets, and presentation sources outside `src` are rejected except for the package barrel and `lib/di`.
+- All five Injectable micro-packages now place their entry points and generated modules in `lib/di`. Package exports and generated imports resolve their new locations.
+- `dart run melos run check --no-select`: passed with 144 tests, clean analysis, formatting, dependency policy, and architecture checks. Existing Bloc, generated DI, and router/widget behavior passed; new regressions cover the sealed-family exception, UI rules at nested paths, and mandatory presentation `src` layout.
+- Melos generation passed; all 14 generated source files remained byte-for-byte unchanged on regeneration at their final locations.
+- Web dev release build passed, including the Wasm dry run.
+
+Native builds and integration were not repeated for this source-layout change; earlier results are recorded below.
+
 ## Network resources and local auth sessions
 
 - Added the public `networkBoundResource` fetch-and-commit function. Remote/decoding failures skip persistence; successful results wait for the local commit, and storage failures retain their original classification.
