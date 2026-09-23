@@ -1,8 +1,8 @@
 import 'package:core_testing/core_testing.dart';
 import 'package:fluent_starter/app.dart';
 import 'package:fluent_starter/app_services.dart';
-import 'package:fluent_starter/bootstrap.dart';
 import 'package:fluent_starter/config/app_config.dart';
+import 'package:fluent_starter/di/app_services_factory.dart';
 import 'package:fluent_starter/routing/app_router.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_test/flutter_test.dart';

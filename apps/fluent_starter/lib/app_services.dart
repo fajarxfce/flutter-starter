@@ -74,12 +74,3 @@ final class AppServices {
     }
   }
 }
-
-class AppScope extends InheritedWidget {
-  const AppScope({required this.services, required super.child, super.key});
-  final AppServices services;
-  static AppServices of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<AppScope>()!.services;
-  @override
-  bool updateShouldNotify(AppScope oldWidget) => services != oldWidget.services;
-}

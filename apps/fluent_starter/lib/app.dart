@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:auth_domain/auth_domain.dart';
 import 'package:core_design_system/core_design_system.dart';
+import 'package:fluent_starter/app_scope.dart';
 import 'package:fluent_starter/app_services.dart';
 import 'package:fluent_starter/routing/app_router.dart';
+import 'package:fluent_starter/routing/app_router.gr.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 

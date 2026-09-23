@@ -15,7 +15,8 @@ import 'package:auth_domain/auth_domain.dart' as _i470;
 import 'package:core_common/core_common.dart' as _i699;
 import 'package:dio/dio.dart' as _i361;
 import 'package:fluent_starter/config/app_config.dart' as _i209;
-import 'package:fluent_starter/di/composition.dart' as _i90;
+import 'package:fluent_starter/di/auth_repository_disposer.dart' as _i226;
+import 'package:fluent_starter/di/composition_module.dart' as _i333;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
@@ -41,7 +42,7 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i1005.AuthApi>(),
         gh<_i699.CredentialStore>(),
       ),
-      dispose: _i90.disposeRepository,
+      dispose: _i226.disposeRepository,
     );
     gh.factory<_i470.Login>(
       () => compositionModule.login(gh<_i470.AuthRepository>()),
@@ -56,4 +57,4 @@ extension GetItInjectableX on _i174.GetIt {
   }
 }
 
-class _$CompositionModule extends _i90.CompositionModule {}
+class _$CompositionModule extends _i333.CompositionModule {}

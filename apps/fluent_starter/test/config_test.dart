@@ -1,4 +1,5 @@
 import 'package:fluent_starter/config/app_config.dart';
+import 'package:fluent_starter/config/app_flavor.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

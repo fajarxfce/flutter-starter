@@ -1,8 +1,6 @@
-import 'package:flutter/services.dart' show appFlavor;
-
-enum AppFlavor { dev, staging, prod }
-
-enum BackendMode { demo, api }
+import 'package:fluent_starter/config/app_flavor.dart';
+import 'package:fluent_starter/config/backend_mode.dart';
+import 'package:flutter/services.dart';
 
 final class AppConfig {
   const AppConfig({
