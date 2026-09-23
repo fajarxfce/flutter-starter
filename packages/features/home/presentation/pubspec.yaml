@@ -8,10 +8,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  core_design_system: ^0.1.0
-  fluent_ui: ^4.16.1
+  core_design_system: any
+  fluent_ui: any
 dev_dependencies:
-  flutter_lints: ^6.0.0
+  flutter_lints: any
   flutter_test:
     sdk: flutter
 flutter:

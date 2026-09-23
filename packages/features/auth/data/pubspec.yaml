@@ -6,19 +6,19 @@ resolution: workspace
 environment:
   sdk: ">=3.13.0 <4.0.0"
 dependencies:
-  injectable: ^3.0.0
-  auth_domain: ^0.1.0
-  core_common: ^0.1.0
-  core_network: ^0.1.0
-  dio: ^5.9.0
-  retrofit: ^4.10.0
-  json_annotation: ^4.12.0
+  injectable: any
+  auth_domain: any
+  core_common: any
+  core_network: any
+  dio: any
+  retrofit: any
+  json_annotation: any
 dev_dependencies:
-  get_it: ^9.3.0
-  injectable_generator: ^3.1.3
-  flutter_lints: ^6.0.0
-  test: ^1.26.0
-  build_runner: ^2.10.0
-  json_serializable: ^6.14.1
-  retrofit_generator: ^10.2.11
-  core_testing: ^0.1.0
+  get_it: any
+  injectable_generator: any
+  flutter_lints: any
+  test: any
+  build_runner: any
+  json_serializable: any
+  retrofit_generator: any
+  core_testing: any

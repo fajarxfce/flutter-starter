@@ -17,12 +17,12 @@ workspace:
   - packages/features/settings/data
   - packages/features/settings/presentation
 dev_dependencies:
-  melos: ^8.9.0
-  flutter_lints: ^6.0.0
-  analyzer: ^13.3.0
-  path: ^1.9.1
-  yaml: ^3.1.3
-  test: ^1.26.0
+  melos: any
+  flutter_lints: any
+  analyzer: any
+  path: any
+  yaml: any
+  test: any
 melos:
   scripts:
     generate:
@@ -44,11 +44,14 @@ melos:
       run: dart format --output=none --set-exit-if-changed apps packages tool test
     architecture:
       run: dart run tool/check_architecture.dart
+    dependencies:
+      run: dart run tool/check_dependencies.dart
     test:
       run: dart run tool/test_all.dart
     check:
       steps:
         - format-check
+        - dependencies
         - architecture
         - analyze
         - test

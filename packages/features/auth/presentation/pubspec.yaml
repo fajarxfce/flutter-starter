@@ -6,25 +6,25 @@ resolution: workspace
 environment:
   sdk: ">=3.13.0 <4.0.0"
 dependencies:
-  injectable: ^3.0.0
+  injectable: any
   flutter:
     sdk: flutter
-  auth_domain: ^0.1.0
-  core_common: ^0.1.0
-  core_design_system: ^0.1.0
-  fluent_ui: ^4.16.1
-  bloc_concurrency: ^0.3.0
-  flutter_bloc: ^9.1.1
-  formz: ^0.8.1
-  freezed_annotation: ^3.1.0
+  auth_domain: any
+  core_common: any
+  core_design_system: any
+  fluent_ui: any
+  bloc_concurrency: any
+  flutter_bloc: any
+  formz: any
+  freezed_annotation: any
 dev_dependencies:
-  injectable_generator: ^3.1.3
-  flutter_lints: ^6.0.0
+  injectable_generator: any
+  flutter_lints: any
   flutter_test:
     sdk: flutter
-  build_runner: ^2.10.0
-  freezed: 4.0.1
-  bloc_test: ^10.0.0
-  core_testing: ^0.1.0
+  build_runner: any
+  freezed: any
+  bloc_test: any
+  core_testing: any
 flutter:
   uses-material-design: true

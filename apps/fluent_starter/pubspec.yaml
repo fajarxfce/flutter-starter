@@ -10,34 +10,34 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  core_common: ^0.1.0
-  core_data: ^0.1.0
-  core_network: ^0.1.0
-  core_design_system: ^0.1.0
-  auth_domain: ^0.1.0
-  auth_data: ^0.1.0
-  auth_presentation: ^0.1.0
-  home_presentation: ^0.1.0
-  settings_domain: ^0.1.0
-  settings_data: ^0.1.0
-  settings_presentation: ^0.1.0
-  cupertino_icons: ^1.0.8
-  auto_route: ^11.2.0
-  fluent_ui: ^4.16.1
-  flutter_bloc: ^9.1.1
-  get_it: ^9.3.0
-  injectable: ^3.0.0
-  dio: ^5.9.0
+  core_common: any
+  core_data: any
+  core_network: any
+  core_design_system: any
+  auth_domain: any
+  auth_data: any
+  auth_presentation: any
+  home_presentation: any
+  settings_domain: any
+  settings_data: any
+  settings_presentation: any
+  cupertino_icons: any
+  auto_route: any
+  fluent_ui: any
+  flutter_bloc: any
+  get_it: any
+  injectable: any
+  dio: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
   integration_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
-  build_runner: ^2.10.0
-  auto_route_generator: ^10.6.0
-  injectable_generator: ^3.0.0
-  flutter_flavorizr: ^2.6.0
-  core_testing: ^0.1.0
+  flutter_lints: any
+  build_runner: any
+  auto_route_generator: any
+  injectable_generator: any
+  flutter_flavorizr: any
+  core_testing: any
 flutter:
   uses-material-design: true
