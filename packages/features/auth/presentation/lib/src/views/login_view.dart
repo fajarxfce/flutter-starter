@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:auth_presentation/src/login_cubit.dart';
+import 'package:auth_presentation/src/cubit/login_cubit.dart';
+import 'package:auth_presentation/src/state/login_state.dart';
 import 'package:core_design_system/core_design_system.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

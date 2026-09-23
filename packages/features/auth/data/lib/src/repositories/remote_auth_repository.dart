@@ -1,6 +1,9 @@
 import 'dart:async';
 
-import 'package:auth_data/src/auth_api.dart';
+import 'package:auth_data/src/datasources/remote/auth_api.dart';
+import 'package:auth_data/src/mappers/user_mapper.dart';
+import 'package:auth_data/src/requests/login_request.dart';
+import 'package:auth_data/src/responses/login_response.dart';
 import 'package:auth_domain/auth_domain.dart';
 import 'package:core_common/core_common.dart';
 import 'package:core_network/core_network.dart';
@@ -17,8 +20,6 @@ final class RemoteAuthRepository implements AuthRepository {
   User? get currentUser => _user;
   @override
   Stream<User?> get sessionChanges => _sessions.stream;
-  User _map(UserDto dto) =>
-      User(id: dto.id, email: dto.email, displayName: dto.displayName);
   void _publish(User? user) {
     if (_disposed) return;
     _user = user;
@@ -68,7 +69,7 @@ final class RemoteAuthRepository implements AuthRepository {
     } on Object {
       return const FailureResult(_storageFailure);
     }
-    final user = _map(response.user);
+    final user = response.user.toEntity();
     _publish(user);
     return Success(user);
   }
@@ -82,7 +83,7 @@ final class RemoteAuthRepository implements AuthRepository {
       return const FailureResult(_storageFailure);
     }
     try {
-      final user = _map(await _api.me());
+      final user = (await _api.me()).toEntity();
       if (generation != _generation || _disposed) {
         return const FailureResult(_cancelled);
       }

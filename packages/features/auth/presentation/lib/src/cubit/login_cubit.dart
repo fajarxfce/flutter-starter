@@ -1,21 +1,10 @@
 import 'package:auth_domain/auth_domain.dart';
-import 'package:auth_presentation/src/inputs.dart';
+import 'package:auth_presentation/src/inputs/email_input.dart';
+import 'package:auth_presentation/src/inputs/password_input.dart';
+import 'package:auth_presentation/src/state/login_state.dart';
 import 'package:core_common/core_common.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'login_cubit.freezed.dart';
-
-@freezed
-abstract class LoginState with _$LoginState {
-  const factory LoginState({
-    @Default(EmailInput.pure()) EmailInput email,
-    @Default(PasswordInput.pure()) PasswordInput password,
-    @Default(FormzSubmissionStatus.initial) FormzSubmissionStatus status,
-    String? error,
-  }) = _LoginState;
-}
 
 final class LoginCubit extends Cubit<LoginState> {
   LoginCubit(this._login) : super(const LoginState());

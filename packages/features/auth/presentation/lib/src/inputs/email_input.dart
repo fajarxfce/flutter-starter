@@ -1,6 +1,5 @@
+import 'package:auth_presentation/src/inputs/input_error.dart';
 import 'package:formz/formz.dart';
-
-enum InputError { empty, invalid }
 
 class EmailInput extends FormzInput<String, InputError> {
   const EmailInput.pure() : super.pure('');
@@ -12,15 +11,4 @@ class EmailInput extends FormzInput<String, InputError> {
         ? null
         : InputError.invalid;
   }
-}
-
-class PasswordInput extends FormzInput<String, InputError> {
-  const PasswordInput.pure() : super.pure('');
-  const PasswordInput.dirty([super.value = '']) : super.dirty();
-  @override
-  InputError? validator(String value) => value.isEmpty
-      ? InputError.empty
-      : value.length < 8
-      ? InputError.invalid
-      : null;
 }

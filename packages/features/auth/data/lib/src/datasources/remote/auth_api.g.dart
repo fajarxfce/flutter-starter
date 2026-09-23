@@ -2,56 +2,6 @@
 
 part of 'auth_api.dart';
 
-// **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
-
-UserDto _$UserDtoFromJson(Map<String, dynamic> json) =>
-    $checkedCreate('UserDto', json, ($checkedConvert) {
-      final val = UserDto(
-        id: $checkedConvert('id', (v) => v as String),
-        email: $checkedConvert('email', (v) => v as String),
-        displayName: $checkedConvert('display_name', (v) => v as String),
-      );
-      return val;
-    }, fieldKeyMap: const {'displayName': 'display_name'});
-
-Map<String, dynamic> _$UserDtoToJson(UserDto instance) => <String, dynamic>{
-  'id': instance.id,
-  'email': instance.email,
-  'display_name': instance.displayName,
-};
-
-LoginRequest _$LoginRequestFromJson(Map<String, dynamic> json) =>
-    $checkedCreate('LoginRequest', json, ($checkedConvert) {
-      final val = LoginRequest(
-        email: $checkedConvert('email', (v) => v as String),
-        password: $checkedConvert('password', (v) => v as String),
-      );
-      return val;
-    });
-
-Map<String, dynamic> _$LoginRequestToJson(LoginRequest instance) =>
-    <String, dynamic>{'email': instance.email, 'password': instance.password};
-
-LoginResponse _$LoginResponseFromJson(Map<String, dynamic> json) =>
-    $checkedCreate('LoginResponse', json, ($checkedConvert) {
-      final val = LoginResponse(
-        accessToken: $checkedConvert('access_token', (v) => v as String),
-        user: $checkedConvert(
-          'user',
-          (v) => UserDto.fromJson(v as Map<String, dynamic>),
-        ),
-      );
-      return val;
-    }, fieldKeyMap: const {'accessToken': 'access_token'});
-
-Map<String, dynamic> _$LoginResponseToJson(LoginResponse instance) =>
-    <String, dynamic>{
-      'access_token': instance.accessToken,
-      'user': instance.user.toJson(),
-    };
-
 // dart format off
 
 // **************************************************************************
