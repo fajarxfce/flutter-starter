@@ -2,6 +2,51 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug | dev | Android",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "dev",
+        "--dart-define=FLAVOR=dev",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "${input:androidDeviceId}"
+    },
+    {
+      "name": "Debug | staging | Android",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "staging",
+        "--dart-define=FLAVOR=staging",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "${input:androidDeviceId}"
+    },
+    {
+      "name": "Debug | prod | Android",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "prod",
+        "--dart-define=FLAVOR=prod",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "${input:androidDeviceId}"
+    },
+    {
       "name": "Debug | dev | native",
       "type": "dart",
       "request": "launch",
@@ -183,6 +228,12 @@
       "id": "vmServiceUri",
       "type": "promptString",
       "description": "Full Dart VM service URI printed by the running Flutter app"
+    },
+    {
+      "id": "androidDeviceId",
+      "type": "promptString",
+      "description": "Android device ID from flutter devices. emulator- selects a single running Android emulator; enter the exact ID for a phone or multiple emulators.",
+      "default": "emulator-"
     }
   ]
 }

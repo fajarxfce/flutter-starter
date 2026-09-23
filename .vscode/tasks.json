@@ -2,6 +2,153 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Android: Run | dev",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "run",
+        "android",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build APK debug | dev",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "build",
+        "android",
+        "dev",
+        "--smoke"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build APK release | dev",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "build",
+        "android",
+        "dev"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Run | staging",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "run",
+        "android",
+        "staging"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build APK debug | staging",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "build",
+        "android",
+        "staging",
+        "--smoke"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build APK release | staging",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "build",
+        "android",
+        "staging"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Run | prod",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "run",
+        "android",
+        "prod"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build APK debug | prod",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "build",
+        "android",
+        "prod",
+        "--smoke"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Android: Build APK release | prod",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "tool/app.dart",
+        "build",
+        "android",
+        "prod"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Workspace: Pub get (locked)",
       "type": "shell",
       "command": "flutter",

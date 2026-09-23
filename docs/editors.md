@@ -10,6 +10,7 @@ Install the recommended Dart and Flutter extensions when prompted.
 
 | Action | How |
 |---|---|
+| Debug Android | Select `Debug \| dev/staging/prod \| Android` → F5 → enter the device ID |
 | Debug the app | Run and Debug → `Debug \| dev/staging/prod \| native` → F5 |
 | Choose a native device | `Flutter: Select Device`, or the device selector in the status bar |
 | Debug in Chrome | Select the corresponding `web` launch preset |
@@ -27,13 +28,17 @@ The build task defaults to Linux/dev. Smoke builds produce a debug APK on Androi
 
 Configuration files: `.vscode/launch.json`, `.vscode/tasks.json`, `.vscode/settings.json`, and `.vscode/extensions.json`.
 
+Android has explicit launch presets and `Android: Run`, `Android: Build APK debug`, and `Android: Build APK release` tasks for every flavor. Debug asks for an Android device ID; its default `emulator-` matches one running Android emulator. For a connected phone or multiple emulators, enter the exact ID shown by the `Flutter: Devices` task (`flutter devices`). The Android run tasks automatically select a single connected Android device through the app wrapper.
+
 ## Zed
 
 Install the **Dart** extension with debug adapter support. These configurations follow the extension's **0.4.1** schema. Its adapter name is `Dart`, while Flutter launch configurations require `type: flutter`.
 
 - Run `debugger: start` from the command palette and select a flavor/platform. Linux, macOS, Windows, and Chrome presets select their device explicitly.
-- For Android/iOS, use a `native (auto device)` preset when Flutter can select one device. If selection is ambiguous, run `Flutter: Devices` and add `"-d", "<actual-device-id>"` to that preset's `toolArgs`. Zed's presets do not use VS Code input prompts or its device selector.
-- Run `task: spawn` to choose a task. Filter by `Flutter`, flavor, and platform. Run/release-build presets cover all six targets and all three flavors; Apple/Android smoke builds have separate labels.
+- Android debug presets are named `Debug | dev/staging/prod | Android emulator`. They pass `-d emulator-`, which targets a running Android emulator without hardcoding its port. Start the emulator first. For a connected Android phone or multiple emulators, replace `emulator-` with the exact ID from the `Flutter: Devices` task (`flutter devices`) in that preset's `toolArgs`; Zed does not provide VS Code's device input prompt.
+- Android terminal tasks are grouped under `Android: Run`, `Android: Build APK debug`, and `Android: Build APK release`, with all three flavors. Run tasks select a single connected Android device automatically; build tasks do not need a connected device.
+- The generic `native (auto device)` presets remain available for other native targets, including iOS. Add `"-d", "<actual-device-id>"` to `toolArgs` if Flutter cannot select a single device.
+- Run `task: spawn` to choose a task. Filter by `Android` or `Flutter`, flavor, and platform. Run/release-build presets cover all six targets and all three flavors; Android debug APK and Apple smoke builds have separate labels.
 - The Linux profile/release presets include `--profile`/`--release` in `toolArgs`: Flutter's DAP reads the CLI flags. Changing `flutterMode` alone is insufficient for this adapter.
 - For hot reload from a terminal run task, press `r`; press `R` for hot restart and `q` to quit. Zed formats Dart files on save; this configuration does not add a hot-reload-on-save integration to Zed's debugger.
 

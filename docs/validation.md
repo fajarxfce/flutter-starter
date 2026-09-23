@@ -4,6 +4,8 @@ Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
 ## Editor workflows
 
+- Android now has explicit dev/staging/prod debug presets and `Android: Run`, `Android: Build APK debug`, and `Android: Build APK release` tasks in both editors. VS Code prompts for a device ID; Zed's Android debug preset targets a running emulator using the `emulator-` ID prefix, which can be replaced with a physical device's ID. Run tasks select a single connected Android device through the existing app command.
+- Revalidated both debugger schemas, input references, and Android task/flavor arguments after exposing these presets. The full workspace check passed again with all 155 tests. Only Linux was connected, so Android launches and APK builds were not exercised for this configuration change.
 - Added VS Code launch/task settings and extension recommendations, plus Zed debugger/task/settings files. Both editors use workspace-relative paths and the existing app/Melos commands. Flavor presets retain the explicit demo backend; VS Code also prompts for API launch/build/run configuration.
 - Parsed all seven editor JSON files and validated launch configurations against Dart Code's debugger schemas and the Zed Dart extension 0.4.1 schema. Checked program/cwd paths, input references, flavor alignment, task arguments, and explicit profile/release flags for Zed's Flutter DAP.
 - Executed the command from VS Code's `Workspace: Check` task: all 155 tests, analyzer, formatting, and architecture/dependency checks passed.
