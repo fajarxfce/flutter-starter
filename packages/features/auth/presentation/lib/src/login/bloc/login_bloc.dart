@@ -1,4 +1,3 @@
-import 'package:auth_domain/auth_domain.dart';
 import 'package:auth_presentation/src/login/bloc/login_event.dart';
 import 'package:auth_presentation/src/login/bloc/login_state.dart';
 import 'package:auth_presentation/src/login/inputs/email_input.dart';
@@ -7,11 +6,15 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:core_common/core_common.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:formz/formz.dart';
+import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 
 @injectable
 final class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  LoginBloc(this._login) : super(const LoginState()) {
+  LoginBloc(this._login, AppEnvironment environment)
+    : super(
+        LoginState(environment: environment.label, isDemo: environment.isDemo),
+      ) {
     on<LoginEmailChanged>(_onEmailChanged);
     on<LoginPasswordChanged>(_onPasswordChanged);
     on<LoginSubmitted>(_onSubmitted, transformer: droppable());

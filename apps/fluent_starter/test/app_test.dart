@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:home_presentation/home_presentation.dart';
+import 'package:identity_domain/identity_domain.dart';
 import 'package:settings_presentation/settings_presentation.dart';
 
 import 'support/extended_settings_router.dart';
@@ -37,10 +38,7 @@ void main() {
     router = container<AppRouter>();
     await tester.pumpWidget(
       MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: container<SessionBloc>()),
-          BlocProvider.value(value: container<AppearanceBloc>()),
-        ],
+        providers: [BlocProvider.value(value: container<AppearanceBloc>())],
         child: FluentStarterApp(routerConfig: router.config()),
       ),
     );
@@ -77,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
     expect(router.stack.length, 1);
-    expect(container<SessionBloc>().state.user, isNull);
+    expect(container<GetCurrentSession>()().user, isNull);
     expect(
       find.text('Welcome, Alex Morgan', skipOffstage: false),
       findsNothing,
@@ -101,7 +99,7 @@ void main() {
     expect(secondHome, isNot(same(firstHome)));
     await tester.pumpWidget(const SizedBox.shrink());
   });
-  testWidgets('home session binding forwards check results to the feature', (
+  testWidgets('home consumes identity use cases and shows check results', (
     tester,
   ) async {
     await mount(tester);
@@ -123,7 +121,7 @@ void main() {
     await mount(tester);
     await signIn(tester);
     expect(router.currentUrl, '/home/preferences');
-    container<SessionBloc>().add(const SessionLogoutRequested());
+    await container<Logout>()();
     await tester.pumpAndSettle();
     expect(router.currentUrl, '/login');
     await signIn(tester);

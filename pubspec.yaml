@@ -9,8 +9,8 @@ workspace:
   - packages/core/network
   - packages/core/design_system
   - packages/core/testing
-  - packages/features/auth/domain
-  - packages/features/auth/data
+  - packages/core/identity/domain
+  - packages/core/identity/data
   - packages/features/auth/presentation
   - packages/features/home/presentation
   - packages/features/settings/domain

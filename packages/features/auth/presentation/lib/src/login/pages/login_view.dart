@@ -6,15 +6,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginView extends StatelessWidget {
-  const LoginView({
-    required this.environment,
-    required this.isDemo,
-    this.sessionMessage,
-    super.key,
-  });
-  final String environment;
-  final bool isDemo;
-  final String? sessionMessage;
+  const LoginView({super.key});
   @override
   Widget build(BuildContext context) => BlocBuilder<LoginBloc, LoginState>(
     builder: (context, state) {
@@ -31,7 +23,7 @@ class LoginView extends StatelessWidget {
               const SizedBox(height: AppSpacing.medium),
               Align(
                 alignment: Alignment.centerLeft,
-                child: EnvironmentBadge(label: environment),
+                child: EnvironmentBadge(label: state.environment),
               ),
               const SizedBox(height: AppSpacing.large),
               SectionCard(
@@ -39,14 +31,6 @@ class LoginView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (sessionMessage != null) ...[
-                        InfoBar(
-                          title: const Text('Session'),
-                          content: Text(sessionMessage!),
-                          severity: InfoBarSeverity.warning,
-                        ),
-                        const SizedBox(height: AppSpacing.medium),
-                      ],
                       InfoLabel(
                         label: 'Email address',
                         child: TextBox(
@@ -104,7 +88,7 @@ class LoginView extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isDemo) ...[
+              if (state.isDemo) ...[
                 const SizedBox(height: AppSpacing.large),
                 const InfoBar(
                   title: Text('Demo workspace'),

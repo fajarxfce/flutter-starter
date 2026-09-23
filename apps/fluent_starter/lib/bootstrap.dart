@@ -1,4 +1,3 @@
-import 'package:auth_presentation/auth_presentation.dart';
 import 'package:fluent_starter/app.dart';
 import 'package:fluent_starter/config/app_config.dart';
 import 'package:fluent_starter/di/injection.dart';
@@ -12,10 +11,7 @@ Future<void> bootstrap(AppConfig config) async {
   final container = await configureDependencies(config);
   runApp(
     MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: container<SessionBloc>()),
-        BlocProvider.value(value: container<AppearanceBloc>()),
-      ],
+      providers: [BlocProvider.value(value: container<AppearanceBloc>())],
       child: FluentStarterApp(routerConfig: container<AppRouter>().config()),
     ),
   );

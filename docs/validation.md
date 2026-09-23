@@ -2,6 +2,13 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Shared identity ownership
+
+- Moved auth's domain/data packages into `packages/core/identity`, with pure domain session snapshots, current-session and observation use cases, and a replaying session stream owned by the local data source. Auth and home depend on the shared domain API.
+- Removed `SessionBloc`, `HomeSession`, and `AppHomeSession`. Home owns its operation loading/feedback; router and guard consume domain session use cases, and bootstrap restores the session once. Injectable registrations remain inside the identity micro-package.
+- The workspace quality gate passed: formatting, dependency policy, architecture boundaries, analyzer, and all 155 tests. Coverage includes new subscribers receiving the current session, independent observer disposal, two Blocs sharing identity without sharing loading/feedback, credential write races, login/logout/expiry, guarded deep links, and feature router isolation.
+- Regenerated affected Injectable, Freezed, and AutoRoute output. No hosted dependency versions changed. Platform builds are deferred to the subsequent OAuth integration in this task.
+
 ## Physical Android debugging over WireGuard
 
 - Enabled classic ADB TCP on port `5555` through the laptop's authorized USB connection. The VPS then connected directly to the phone's WireGuard address, `10.77.77.3:5555`, with device authorization. Flutter detected a physical SM A725F running Android 16 / API 36.

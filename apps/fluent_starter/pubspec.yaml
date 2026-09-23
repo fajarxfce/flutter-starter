@@ -14,7 +14,8 @@ dependencies:
   core_data: any
   core_network: any
   core_design_system: any
-  auth_data: any
+  identity_data: any
+  identity_domain: any
   auth_presentation: any
   home_presentation: any
   settings_data: any
@@ -37,6 +38,5 @@ dev_dependencies:
   injectable_generator: any
   flutter_flavorizr: any
   core_testing: any
-  auth_domain: any
 flutter:
   uses-material-design: true

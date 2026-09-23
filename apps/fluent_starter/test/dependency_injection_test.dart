@@ -1,5 +1,3 @@
-import 'package:auth_data/auth_data.dart';
-import 'package:auth_domain/auth_domain.dart';
 import 'package:auth_presentation/auth_presentation.dart';
 import 'package:core_common/core_common.dart';
 import 'package:core_network/core_network.dart';
@@ -10,6 +8,8 @@ import 'package:fluent_starter/di/injection.dart';
 import 'package:fluent_starter/routing/app_router.dart';
 import 'package:fluent_starter/routing/guards/session_guard.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:identity_data/identity_data.dart';
+import 'package:identity_domain/identity_domain.dart';
 
 void main() {
   test(
@@ -27,10 +27,11 @@ void main() {
         container<AuthRemoteDataSource>(),
         same(container<AuthRemoteDataSource>()),
       );
-      final repository = container<AuthRepository>();
-      expect(repository, isA<RemoteAuthRepository>());
-      expect(container<AuthRepository>(), same(repository));
-      expect(container<SessionGuard>().session, same(container<SessionBloc>()));
+      final repository = container<IdentityRepository>();
+      expect(repository, isA<RemoteIdentityRepository>());
+      expect(container<IdentityRepository>(), same(repository));
+      expect(container<SessionGuard>(), isA<SessionGuard>());
+      expect(container<GetCurrentSession>()(), isA<SessionUnauthenticated>());
       expect(
         container<HttpClientAdapter>(instanceName: mainApi),
         isA<DemoAdapter>(),
@@ -46,9 +47,10 @@ void main() {
       final secondRouter = container<AppRouter>();
       expect(secondRouter, same(router));
 
-      final signedIn = repository.sessionChanges.firstWhere(
-        (user) => user != null,
-      );
+      final signedIn = repository.sessionChanges
+          .skip(1)
+          .map((session) => session.user)
+          .firstWhere((user) => user != null);
       bloc.add(const LoginEmailChanged('demo@example.com'));
       bloc.add(const LoginPasswordChanged('Demo123!'));
       bloc.add(const LoginSubmitted());
@@ -56,13 +58,13 @@ void main() {
       expect(credentials.token, 'demo-access-token');
       expect(await container<RestoreSession>()(), isA<Success<User?>>());
       expect(await container<Logout>()(), isA<Success<void>>());
-      expect(repository.currentUser, isNull);
+      expect(repository.session.user, isNull);
       expect(credentials.token, isNull);
       await bloc.close();
       await secondBloc.close();
 
       final sessionStreamClosed = expectLater(
-        repository.sessionChanges,
+        repository.sessionChanges.skip(1).map((session) => session.user),
         emitsDone,
       );
       await container.reset();

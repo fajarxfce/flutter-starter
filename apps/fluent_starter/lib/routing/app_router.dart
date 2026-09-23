@@ -5,6 +5,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:fluent_starter/routing/app_router.gr.dart';
 import 'package:fluent_starter/routing/guards/session_guard.dart';
 import 'package:home_presentation/home_presentation.dart';
+import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 import 'package:settings_presentation/settings_presentation.dart';
 
@@ -13,21 +14,22 @@ import 'package:settings_presentation/settings_presentation.dart';
 class AppRouter extends RootStackRouter {
   AppRouter(
     this.sessionGuard,
-    SessionBloc session,
+    GetCurrentSession current,
+    WatchSession watch,
     this._authRouter,
     this._homeRouter,
     this._settingsRouter,
-  ) : _authenticated = session.state.isAuthenticated {
-    _subscription = session.stream.listen(_onSessionChanged);
+  ) : _authenticated = current().isAuthenticated {
+    _subscription = watch().listen(_onSessionChanged);
   }
   final SessionGuard sessionGuard;
   final AuthRouter _authRouter;
   final HomeRouter _homeRouter;
   final SettingsRouter _settingsRouter;
-  late final StreamSubscription<SessionState> _subscription;
+  late final StreamSubscription<Session> _subscription;
   bool _authenticated;
 
-  void _onSessionChanged(SessionState state) {
+  void _onSessionChanged(Session state) {
     if (_authenticated == state.isAuthenticated) return;
     _authenticated = state.isAuthenticated;
     if (!_authenticated) {

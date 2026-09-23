@@ -7,7 +7,6 @@ export 'src/home/bloc/home_event.dart'
         HomeLogoutRequested,
         HomeSessionExpiryRequested;
 export 'src/home/bloc/home_state.dart';
-export 'src/home/session/home_session.dart';
 export 'src/home/widgets/home_overview.dart';
 export 'src/navigation/home_router.dart';
 export 'src/navigation/home_router.gr.dart';

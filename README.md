@@ -36,9 +36,9 @@ packages/core/data                 secure credentials and preferences
 packages/core/network              injectable Dio/options/interceptors, failure mapping
 packages/core/design_system        Fluent themes, tokens and components
 packages/core/testing              fakes and mock helpers (tests only)
-packages/features/auth/domain      entities, repository contract, use cases
-packages/features/auth/data        Retrofit, remote data source, JSON DTOs, repository
-packages/features/auth/presentation login/session Blocs, Freezed state, Formz, login routes/UI
+packages/core/identity/domain      entities, repository contract, use cases
+packages/core/identity/data        Retrofit, remote data source, JSON DTOs, repository
+packages/features/auth/presentation LoginBloc, Freezed state, Formz, login routes/UI
 packages/features/home/presentation dashboard Bloc/UI, session port, feature routes
 packages/features/settings/domain  theme entity, repository contract, use cases
 packages/features/settings/data    persisted appearance preferences
@@ -59,7 +59,7 @@ flowchart LR
   Network --> Common
 ```
 
-Domain has no Flutter, transport, persistence, JSON, or DI framework imports. Presentation Blocs depend on domain use cases through constructors. Injectable generates package modules for core/network, auth/data, auth/presentation, home/presentation, settings/data, and settings/presentation; the app composes them in an isolated GetIt container. GetIt access stays in DI, bootstrap, and route composition. Route pages bind presentation state and events to feature widgets; features do not import each other. Home consumes its own `HomeSession` presentation contract through `HomeBloc`; the app adapter maps auth session state and commands into that contract.
+Domain has no Flutter, transport, persistence, JSON, or DI framework imports. Presentation Blocs depend on domain use cases through constructors. Injectable generates package modules for core/network, core/identity/data, auth/presentation, home/presentation, settings/data, and settings/presentation; the app composes them in an isolated GetIt container. GetIt access stays in DI, bootstrap, and route composition. Route pages bind presentation state and events to feature widgets; features do not import each other. Auth and home consume the shared identity domain. Identity data owns the session; every observer receives its current snapshot followed by changes. Loading and feedback belong to the Bloc performing an action, and no feature consumes another feature's Bloc.
 
 `tool/check_architecture.dart` checks package dependencies, production imports/exports (including conditional ones), forbidden framework dependencies, private cross-package imports, directory escapes, and cycles. It uses the Dart analyzer AST, not text matching. Generated files are checked too. The allowlist requires an explicit decision when adding a package.
 
@@ -86,15 +86,15 @@ Use cases return `Success<T>` or `FailureResult<T>`. Data exceptions and DTOs ne
 Package entrypoints are export-only barrels. Each handwritten implementation file declares one public type, organized by responsibility:
 
 ```text
-features/auth/domain/lib/
-  auth_domain.dart
+core/identity/domain/lib/
+  identity_domain.dart
   src/entities/user.dart
-  src/repositories/auth_repository.dart
+  src/repositories/identity_repository.dart
   src/usecases/login.dart
   src/usecases/logout.dart
   src/usecases/restore_session.dart
 
-features/auth/data/lib/
+core/identity/data/lib/
   di/injection.dart
   src/dto/user_dto.dart
   src/requests/login_request.dart
@@ -106,7 +106,7 @@ features/auth/data/lib/
   src/datasources/demo/demo_adapter.dart
   src/mappers/user_mapper.dart
   src/mappers/auth_session_mapper.dart
-  src/repositories/remote_auth_repository.dart
+  src/repositories/remote_identity_repository.dart
 
 features/auth/presentation/lib/
   di/injection.dart
@@ -115,9 +115,6 @@ features/auth/presentation/lib/
   src/login/bloc/login_state.dart
   src/login/inputs/{email_input,password_input,input_error}.dart
   src/login/pages/login_view.dart
-  src/session/bloc/session_bloc.dart
-  src/session/bloc/session_event.dart
-  src/session/bloc/session_state.dart
 
 features/settings/domain/lib/src/
   entities/app_theme_mode.dart
@@ -136,7 +133,7 @@ features/settings/presentation/lib/
   src/appearance/pages/appearance_view.dart
 
 features/home/presentation/lib/
-  src/home/pages/home_view.dart
+  src/home/pages/overview_page.dart
   src/home/widgets/home_overview.dart
 ```
 
@@ -151,8 +148,8 @@ The architecture check requires presentation feature sources under `lib/src/`, w
 Pages and views render presentation state and dispatch Bloc events. They do not call use cases, repositories, storage, or transport; manage subscriptions; await operations; keep application state with `setState`; or decide authentication/navigation outcomes. Conditional widget rendering and layout bindings remain in UI. Validation messages and display-ready user fields belong to presentation state.
 
 - `LoginBloc` owns input validation and submission.
-- `SessionBloc` owns startup restoration, session observation, checking, logout, demo-expiry orchestration, loading state, and feedback. `WatchSession`, `RestoreSession`, `Logout`, and `ExpireDemoSession` are domain use cases. The demo simulation has its own repository contract and data implementation.
-- `HomeBloc` consumes display-ready session state through `HomeSession`, forwards explicit session events, and releases its subscription when the overview route is removed. `AppHomeSession` adapts auth in app composition; home does not depend on auth.
+- Identity owns the session snapshot and stream. `GetCurrentSession`, `WatchSession`, `RestoreSession`, `Logout`, and `ExpireDemoSession` are pure domain use cases. Bootstrap awaits restoration once before mounting the app; the demo simulation has its own repository contract.
+- `HomeBloc` consumes identity use cases, maps session data into display-ready fields, and owns its loading/feedback. It releases its subscription when the overview route is removed. There is no app adapter or shared presentation Bloc for session access.
 - `AppearanceBloc` owns theme loading, conversion to Flutter theme mode, and ordered persistence through settings use cases. Storage failures keep the chosen theme for the current session and expose feedback in state.
 - `AppRouter` observes authentication transitions and coordinates protected navigation with `SessionGuard`. UI has no sign-in completion callback or session subscription.
 
@@ -162,22 +159,22 @@ Pages and views render presentation state and dispatch Bloc events. They do not 
 
 ### Dependency injection and HTTP providers
 
-`apps/fluent_starter/lib/di/injection.dart` includes six generated micro-package modules. Each participating package has one `lib/di/injection.dart` entry point. Runtime `AppConfig`, `CredentialStore`, and `PreferenceStore` are supplied at the app boundary, allowing platform stores to be replaced in tests. The container also registers itself for route composition. Application dependencies are generated by Injectable. Session and appearance startup events finish before the app mounts.
+`apps/fluent_starter/lib/di/injection.dart` includes six generated micro-package modules. Each participating package has one `lib/di/injection.dart` entry point. Runtime `AppConfig`, `CredentialStore`, and `PreferenceStore` are supplied at the app boundary, allowing platform stores to be replaced in tests. The container also registers itself for route composition. Application dependencies are generated by Injectable. Session restoration and the appearance startup event finish before the app mounts.
 
-`@InjectableInit.microPackage` generates registrations from the package's annotations. Annotate constructors/classes directly for data sources, repositories, Blocs, and the Retrofit factory. Handwritten `@module` bindings are needed for third-party constructors and pure domain classes that cannot carry DI annotations. Each feature data package groups its use-case bindings in its existing `injection.dart`: `AuthModule` for auth and `SettingsModule` for settings. Domain classes retain constructor injection without importing a DI framework.
+`@InjectableInit.microPackage` generates registrations from the package's annotations. Annotate constructors/classes directly for data sources, repositories, Blocs, and the Retrofit factory. Handwritten `@module` bindings are needed for third-party constructors and pure domain classes that cannot carry DI annotations. Each feature data package groups its use-case bindings in its existing `injection.dart`: `IdentityModule` for shared identity and `SettingsModule` for settings. Domain classes retain constructor injection without importing a DI framework.
 
 Adding a use case to an existing feature changes that feature's bindings and generated micro-package module. `AppModule` supplies only shared runtime configuration and transport; the app composes the generated modules. `NetworkModule` constructs the named Dio client in core/network; app bindings supply its `BaseOptions`, transport adapter, and logging interceptor. Each feature module can be initialized with its required infrastructure dependencies and tested without app composition.
 
 | Owner | Injectable registrations |
 |---|---|
 | Core network `lib/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
-| Auth data `lib/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
-| Auth presentation | Factory `LoginBloc`, shared `SessionBloc`, and `AuthRouter` configuration |
-| Home presentation | Factory `HomeBloc` receiving `HomeSession`, and `HomeRouter` configuration |
+| Identity data `lib/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, `GetCurrentSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
+| Auth presentation | Factory `LoginBloc` and shared `AuthRouter` configuration |
+| Home presentation | Factory `HomeBloc` receiving identity use cases and shared `HomeRouter` configuration |
 | Settings data `lib/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
 | Settings presentation | Shared `AppearanceBloc`, receiving settings use cases, and `SettingsRouter` configuration |
 | App `lib/di/injection.dart` | `AppEnvironment`; `mainApi` bindings for `BaseOptions`, safe logging interceptor, and `HttpClientAdapter` (demo or platform transport) |
-| App routing | Shared `AppRouter`, `SessionGuard`, and `AppHomeSession` bound to `HomeSession` |
+| App routing | Shared `AppRouter` and `SessionGuard` consuming identity session use cases |
 
 The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named credential and logging interceptors. Authentication headers are restricted to the API origin and omitted from login requests. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, local session data source, and Dio transport when the container is reset. The local data source drains pending credential operations before closing its session stream.
 

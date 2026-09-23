@@ -9,6 +9,8 @@ part 'login_state.freezed.dart';
 abstract class LoginState with _$LoginState {
   const LoginState._();
   const factory LoginState({
+    @Default('') String environment,
+    @Default(false) bool isDemo,
     @Default(EmailInput.pure()) EmailInput email,
     @Default(PasswordInput.pure()) PasswordInput password,
     @Default(FormzSubmissionStatus.initial) FormzSubmissionStatus status,

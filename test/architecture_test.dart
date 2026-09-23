@@ -13,7 +13,7 @@ void main() {
         .writeAsStringSync('workspace: [common, domain]\n');
     for (final entry in {
       'common': 'core_common',
-      'domain': 'auth_domain',
+      'domain': 'identity_domain',
     }.entries) {
       Directory(p.join(root.path, entry.key, 'lib'))
           .createSync(recursive: true);
@@ -73,20 +73,21 @@ void main() {
   });
   test('rejects forbidden dependency and cycles', () {
     File(p.join(root.path, 'common/pubspec.yaml')).writeAsStringSync(
-      'name: core_common\ndependencies: {auth_domain: any}\n',
+      'name: core_common\ndependencies: {identity_domain: any}\n',
     );
     expect(checkArchitecture(root), contains(contains('forbidden dependency')));
     expect(checkArchitecture(root), contains(contains('cycle')));
   });
   test('rejects implementations and imports in a package barrel', () {
-    File(p.join(root.path, 'domain/lib/auth_domain.dart')).writeAsStringSync(
-      "import 'package:core_common/core_common.dart';\nclass User {}",
-    );
+    File(p.join(root.path, 'domain/lib/identity_domain.dart'))
+        .writeAsStringSync(
+          "import 'package:core_common/core_common.dart';\nclass User {}",
+        );
     expect(checkArchitecture(root), contains(contains('only exports')));
   });
   test('rejects unrelated public types in one implementation file', () {
     File(p.join(root.path, 'domain/lib/models.dart')).writeAsStringSync(
-      'class User {}\nabstract interface class AuthRepository {}',
+      'class User {}\nabstract interface class IdentityRepository {}',
     );
     expect(checkArchitecture(root), contains(contains('split public types')));
   });
@@ -119,7 +120,7 @@ $unrelated
     }
   });
   test('accepts export barrels, private companions and generated types', () {
-    File(p.join(root.path, 'domain/lib/auth_domain.dart'))
+    File(p.join(root.path, 'domain/lib/identity_domain.dart'))
         .writeAsStringSync("export 'view.dart';");
     File(p.join(root.path, 'domain/lib/view.dart'))
         .writeAsStringSync('class View {}\nclass _ViewState {}');
@@ -241,7 +242,9 @@ const explanation = 'Cubit, ValueNotifier and StatefulWidget';
       );
       expect(
         checkArchitecture(root),
-        contains('auth_domain/$path: UI must not declare logic/helper methods'),
+        contains(
+          'identity_domain/$path: UI must not declare logic/helper methods',
+        ),
         reason: path,
       );
       file.deleteSync();
@@ -284,7 +287,7 @@ const explanation = 'Cubit, ValueNotifier and StatefulWidget';
   });
   test('UI cannot import use cases, data, storage or service locators', () {
     writeView(
-      "import 'package:auth_domain/auth_domain.dart'; import 'package:get_it/get_it.dart';",
+      "import 'package:identity_domain/identity_domain.dart'; import 'package:get_it/get_it.dart';",
     );
     expect(
       checkArchitecture(root),

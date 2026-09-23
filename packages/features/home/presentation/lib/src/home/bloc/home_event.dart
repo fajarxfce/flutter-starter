@@ -1,4 +1,4 @@
-import 'package:home_presentation/src/home/bloc/home_state.dart';
+import 'package:identity_domain/identity_domain.dart';
 
 sealed class HomeEvent {
   const HomeEvent();
@@ -17,6 +17,6 @@ final class HomeSessionExpiryRequested extends HomeEvent {
 }
 
 final class HomeSessionChanged extends HomeEvent {
-  const HomeSessionChanged(this.state);
-  final HomeState state;
+  const HomeSessionChanged(this.session);
+  final Session session;
 }

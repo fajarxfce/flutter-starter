@@ -11,7 +11,7 @@ dependencies:
   injectable: any
   flutter:
     sdk: flutter
-  auth_domain: any
+  identity_domain: any
   core_common: any
   core_design_system: any
   fluent_ui: any

@@ -1,19 +1,22 @@
 import 'dart:async';
 
-import 'package:auth_domain/auth_domain.dart';
 import 'package:auth_presentation/auth_presentation.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:core_common/core_common.dart';
 import 'package:core_testing/core_testing.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formz/formz.dart';
+import 'package:identity_domain/identity_domain.dart';
 
-class MockAuthRepository extends Mock implements AuthRepository {}
+class MockIdentityRepository extends Mock implements IdentityRepository {}
 
 void main() {
-  late MockAuthRepository repository;
-  setUp(() => repository = MockAuthRepository());
-  LoginBloc create() => LoginBloc(Login(repository));
+  late MockIdentityRepository repository;
+  setUp(() => repository = MockIdentityRepository());
+  LoginBloc create() => LoginBloc(
+    Login(repository),
+    const AppEnvironment(label: 'test', isDemo: true),
+  );
   void fill(LoginBloc bloc) {
     bloc.add(const LoginEmailChanged('demo@example.com'));
     bloc.add(const LoginPasswordChanged('Demo123!'));

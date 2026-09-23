@@ -1,23 +1,38 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:core_common/core_common.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:home_presentation/home_presentation.dart';
+import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 
-import '../support/fake_home_session.dart';
+import '../support/fake_identity_repository.dart';
 
 void main() {
   testWidgets('mounts the generated feature subtree without app or auth', (
     tester,
   ) async {
-    final session = FakeHomeSession(
-      const HomeState(displayName: 'Feature host'),
+    final session = FakeIdentityRepository(
+      const SessionAuthenticated(
+        User(
+          id: 'host',
+          email: 'host@example.com',
+          displayName: 'Feature host',
+        ),
+      ),
     );
     final container = GetIt.asNewInstance();
     container.registerSingleton<GetIt>(container);
-    container.registerSingleton<HomeSession>(session);
+    container.registerSingleton(WatchSession(session));
+    container.registerSingleton(GetCurrentSession(session));
+    container.registerSingleton(RestoreSession(session));
+    container.registerSingleton(Logout(session));
+    container.registerSingleton(ExpireDemoSession(session));
+    container.registerSingleton(
+      const AppEnvironment(label: 'test', isDemo: false),
+    );
     await HomePresentationPackageModule().init(GetItHelper(container));
     final router = RootStackRouter.build(
       routes: [

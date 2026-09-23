@@ -1,16 +1,17 @@
 import 'package:auth_presentation/auth_presentation.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class SessionGuard extends AutoRouteGuard {
-  SessionGuard(this.session);
-  final SessionBloc session;
+  SessionGuard(this._current);
+  final GetCurrentSession _current;
   final _pending = <NavigationResolver>[];
 
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
-    if (session.state.isAuthenticated) {
+    if (_current().isAuthenticated) {
       resolver.next();
       return;
     }

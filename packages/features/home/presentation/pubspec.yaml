@@ -6,6 +6,9 @@ resolution: workspace
 environment:
   sdk: ">=3.13.0 <4.0.0"
 dependencies:
+  identity_domain: any
+  core_common: any
+  bloc_concurrency: any
   injectable: any
   flutter_bloc: any
   freezed_annotation: any

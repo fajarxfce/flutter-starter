@@ -6,28 +6,19 @@
 
 import 'dart:async' as _i687;
 
-import 'package:auth_domain/auth_domain.dart' as _i470;
 import 'package:auth_presentation/src/login/bloc/login_bloc.dart' as _i1001;
 import 'package:auth_presentation/src/navigation/auth_router.dart' as _i0;
-import 'package:auth_presentation/src/session/bloc/session_bloc.dart' as _i278;
 import 'package:core_common/core_common.dart' as _i699;
 import 'package:get_it/get_it.dart' as _i174;
+import 'package:identity_domain/identity_domain.dart' as _i516;
 import 'package:injectable/injectable.dart' as _i526;
 
 class AuthPresentationPackageModule extends _i526.MicroPackageModule {
   // initializes the registration of main-scope dependencies inside of GetIt
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
-    gh.factory<_i1001.LoginBloc>(() => _i1001.LoginBloc(gh<_i470.Login>()));
-    gh.lazySingleton<_i278.SessionBloc>(
-      () => _i278.SessionBloc(
-        gh<_i470.RestoreSession>(),
-        gh<_i470.Logout>(),
-        gh<_i470.ExpireDemoSession>(),
-        gh<_i470.WatchSession>(),
-        gh<_i699.AppEnvironment>(),
-      ),
-      dispose: (i) => i.close(),
+    gh.factory<_i1001.LoginBloc>(
+      () => _i1001.LoginBloc(gh<_i516.Login>(), gh<_i699.AppEnvironment>()),
     );
     gh.lazySingleton<_i0.AuthRouter>(() => _i0.AuthRouter(gh<_i174.GetIt>()));
   }

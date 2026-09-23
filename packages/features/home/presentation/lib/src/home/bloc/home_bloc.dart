@@ -1,34 +1,95 @@
 import 'dart:async';
 
+import 'package:bloc_concurrency/bloc_concurrency.dart';
+import 'package:core_common/core_common.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:home_presentation/src/home/bloc/home_event.dart';
 import 'package:home_presentation/src/home/bloc/home_state.dart';
-import 'package:home_presentation/src/home/session/home_session.dart';
+import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 
 @injectable
 final class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  HomeBloc(this._session) : super(_session.state) {
-    on<HomeEvent>(_onEvent);
-    _subscription = _session.states.listen(
-      (state) => add(HomeSessionChanged(state)),
+  HomeBloc(
+    WatchSession watch,
+    GetCurrentSession current,
+    this._restore,
+    this._logout,
+    this._expire,
+    AppEnvironment environment,
+  ) : super(
+        HomeState(
+          displayName: current().user?.displayName ?? '',
+          email: current().user?.email ?? '',
+          environment: environment.label,
+          isDemo: environment.isDemo,
+        ),
+      ) {
+    on<HomeEvent>(_onEvent, transformer: sequential());
+    _subscription = watch().listen(
+      (session) => add(HomeSessionChanged(session)),
     );
   }
 
-  final HomeSession _session;
-  late final StreamSubscription<HomeState> _subscription;
+  final RestoreSession _restore;
+  final Logout _logout;
+  final ExpireDemoSession _expire;
+  late final StreamSubscription<Session> _subscription;
 
-  void _onEvent(HomeEvent event, Emitter<HomeState> emit) {
+  Future<void> _onEvent(HomeEvent event, Emitter<HomeState> emit) async {
     switch (event) {
       case HomeSessionCheckRequested():
-        _session.check();
+        await _check(emit, showSuccess: true);
       case HomeLogoutRequested():
-        _session.logout();
+        emit(state.copyWith(busy: true, message: null));
+        final result = await _logout();
+        if (emit.isDone) return;
+        emit(
+          state.copyWith(
+            busy: false,
+            message: switch (result) {
+              FailureResult<void>(:final failure) => failure.message,
+              Success<void>() => null,
+            },
+          ),
+        );
       case HomeSessionExpiryRequested():
-        if (state.isDemo) _session.expire();
-      case HomeSessionChanged(:final state):
-        emit(state);
+        if (!state.isDemo) return;
+        emit(state.copyWith(busy: true, message: null));
+        final result = await _expire();
+        if (emit.isDone) return;
+        if (result case FailureResult<void>(:final failure)) {
+          emit(state.copyWith(busy: false, message: failure.message));
+          return;
+        }
+        await _check(emit, showSuccess: false);
+      case HomeSessionChanged(:final session):
+        emit(
+          state.copyWith(
+            displayName: session.user?.displayName ?? '',
+            email: session.user?.email ?? '',
+          ),
+        );
     }
+  }
+
+  Future<void> _check(
+    Emitter<HomeState> emit, {
+    required bool showSuccess,
+  }) async {
+    emit(state.copyWith(busy: true, message: null));
+    final result = await _restore();
+    if (emit.isDone) return;
+    emit(
+      state.copyWith(
+        busy: false,
+        message: switch (result) {
+          FailureResult<User?>(:final failure) => failure.message,
+          Success<User?>() =>
+            showSuccess ? 'Your session is up to date.' : null,
+        },
+      ),
+    );
   }
 
   @override

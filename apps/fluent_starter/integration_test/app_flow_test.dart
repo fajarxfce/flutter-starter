@@ -1,5 +1,3 @@
-import 'package:auth_domain/auth_domain.dart';
-import 'package:auth_presentation/auth_presentation.dart';
 import 'package:fluent_starter/app.dart';
 import 'package:fluent_starter/config/app_config.dart';
 import 'package:fluent_starter/di/injection.dart';
@@ -8,16 +6,14 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:identity_domain/identity_domain.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:settings_presentation/settings_presentation.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   Widget app(GetIt container) => MultiBlocProvider(
-    providers: [
-      BlocProvider.value(value: container<SessionBloc>()),
-      BlocProvider.value(value: container<AppearanceBloc>()),
-    ],
+    providers: [BlocProvider.value(value: container<AppearanceBloc>())],
     child: FluentStarterApp(routerConfig: container<AppRouter>().config()),
   );
 
@@ -41,7 +37,7 @@ void main() {
     await first.reset();
 
     final restored = await configureDependencies(config);
-    expect(restored<SessionBloc>().state.email, 'demo@example.com');
+    expect(restored<GetCurrentSession>()().user?.email, 'demo@example.com');
     await tester.pumpWidget(app(restored));
     await tester.pumpAndSettle();
     expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
