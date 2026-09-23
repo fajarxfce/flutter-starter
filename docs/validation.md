@@ -2,6 +2,16 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Editor workflows
+
+- Added VS Code launch/task settings and extension recommendations, plus Zed debugger/task/settings files. Both editors use workspace-relative paths and the existing app/Melos commands. Flavor presets retain the explicit demo backend; VS Code also prompts for API launch/build/run configuration.
+- Parsed all seven editor JSON files and validated launch configurations against Dart Code's debugger schemas and the Zed Dart extension 0.4.1 schema. Checked program/cwd paths, input references, flavor alignment, task arguments, and explicit profile/release flags for Zed's Flutter DAP.
+- Executed the command from VS Code's `Workspace: Check` task: all 155 tests, analyzer, formatting, and architecture/dependency checks passed.
+- Launched the actual Zed Linux/dev configuration through Flutter DAP under Xvfb with an isolated keyring. A breakpoint in `main.dart`, stack inspection, continue, hot reload, and disconnect passed.
+- Executed the command from VS Code's smoke-build task with web/dev inputs: release build and Wasm dry run passed.
+
+VS Code and Zed executables were unavailable in this environment, so editor UI interactions were not exercised. Android, iOS, macOS, and Windows launch/build presets were checked as configuration, without running their native toolchains.
+
 ## Feature-owned navigation
 
 - Auth, home, and settings now own their `@RoutePage` pages, route trees, and generated route classes. The app generates only `AppShellRoute` and composes the feature trees with its session guard. Feature router configuration classes use `@AutoRouterConfig` without creating additional `RootStackRouter` instances.

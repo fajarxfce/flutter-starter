@@ -25,6 +25,8 @@ dart run tool/app.dart run linux dev --api=https://api.example.com
 
 `--api` selects the real Retrofit backend and requires an HTTPS origin. It never falls back to demo. The wrapper sets matching `FLAVOR`, `BACKEND`, and native `--flavor` arguments. Web has Dart environment configuration only. Native/Dart flavor mismatches fail at startup. Direct Flutter invocations should pass the same arguments; examples are in `.vscode/launch.json`.
 
+VS Code and Zed configurations include flavor-aware app debugging, run/build tasks, code generation, and workspace checks. Open the repository root and follow [the editor guide](docs/editors.md) for device selection, API backends, profiling, and task shortcuts.
+
 ## Architecture
 
 ```text

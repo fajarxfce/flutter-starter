@@ -1,0 +1,50 @@
+# VS Code and Zed
+
+Open the **repository root**, not only `apps/fluent_starter`. Both editors use Flutter/Dart from `PATH`; no personal SDK path is committed. Run `Workspace: Pub get (locked)` or `Workspace: Bootstrap` after cloning.
+
+All flavor presets use the **demo backend**, including `prod` and release builds. Native launches pass both `--flavor` and `FLAVOR`; web launches pass only Dart defines. Build/run tasks use the existing `tool/app.dart` wrapper.
+
+## VS Code
+
+Install the recommended Dart and Flutter extensions when prompted.
+
+| Action | How |
+|---|---|
+| Debug the app | Run and Debug → `Debug \| dev/staging/prod \| native` → F5 |
+| Choose a native device | `Flutter: Select Device`, or the device selector in the status bar |
+| Debug in Chrome | Select the corresponding `web` launch preset |
+| Run without breakpoints | Run → Start Without Debugging (Ctrl+F5 on Windows/Linux) |
+| Profile / release | Select `Profile` or `Release`, then choose the flavor |
+| Debug against an API | Select `Debug API`, choose the flavor, and enter the HTTPS origin |
+| Attach | Select `Attach \| running Flutter VM` and paste its complete VM service URI |
+| Debug tests | Select the app/tooling test-suite preset, or use the Dart extension's inline Debug Test action |
+| Build | `Tasks: Run Build Task` (Ctrl+Shift+B) selects the smoke build, then asks for platform/flavor |
+| Release build / terminal run | `Tasks: Run Task` → the appropriate Flutter task |
+
+Native presets use the selected device. Choose a native device for native configurations; web configurations select Chrome explicitly. Profile/release require a supported device; use debug mode for normal breakpoint work. Dart files format and organize imports on save, and manual saves of changed files trigger Flutter hot reload during a debug session.
+
+The build task defaults to Linux/dev. Smoke builds produce a debug APK on Android, omit signing on Apple targets, and otherwise produce release builds. Choose `Flutter: Build release` for a regular release build. The API build/run tasks request the HTTPS origin explicitly.
+
+Configuration files: `.vscode/launch.json`, `.vscode/tasks.json`, `.vscode/settings.json`, and `.vscode/extensions.json`.
+
+## Zed
+
+Install the **Dart** extension with debug adapter support. These configurations follow the extension's **0.4.1** schema. Its adapter name is `Dart`, while Flutter launch configurations require `type: flutter`.
+
+- Run `debugger: start` from the command palette and select a flavor/platform. Linux, macOS, Windows, and Chrome presets select their device explicitly.
+- For Android/iOS, use a `native (auto device)` preset when Flutter can select one device. If selection is ambiguous, run `Flutter: Devices` and add `"-d", "<actual-device-id>"` to that preset's `toolArgs`. Zed's presets do not use VS Code input prompts or its device selector.
+- Run `task: spawn` to choose a task. Filter by `Flutter`, flavor, and platform. Run/release-build presets cover all six targets and all three flavors; Apple/Android smoke builds have separate labels.
+- The Linux profile/release presets include `--profile`/`--release` in `toolArgs`: Flutter's DAP reads the CLI flags. Changing `flutterMode` alone is insufficient for this adapter.
+- For hot reload from a terminal run task, press `r`; press `R` for hot restart and `q` to quit. Zed formats Dart files on save; this configuration does not add a hot-reload-on-save integration to Zed's debugger.
+
+To adjust a task temporarily, select it in the task picker and press Tab to edit its command. For example, add `--device=<id>` for a mobile run, or `--api=https://your-api.example.com` for the API backend. Keep the HTTPS origin free of paths/query parameters.
+
+To debug an API backend in Zed, duplicate the relevant launch entry, replace `--dart-define=BACKEND=demo` with `--dart-define=BACKEND=api`, and add `--dart-define=API_BASE_URL=https://your-api.example.com` to `toolArgs`. Keep the native flavor and `FLAVOR` values identical.
+
+Configuration files: `.zed/debug.json`, `.zed/tasks.json`, and `.zed/settings.json`.
+
+## Workspace tasks
+
+Both editors expose dependency bootstrap, locked pub get, code generation, the complete quality gate, analysis, formatting, all tests, flavor regeneration, device listing, Flutter doctor, and the Linux keyring integration test.
+
+Generation is an explicit task; launching the debugger does not regenerate the whole workspace. Use `Workspace: Generate` after changing annotations and `Workspace: Check` before committing. Linux integration requires its Linux host dependencies; Apple and Windows builds require their respective hosts/toolchains. See the platform matrix in [README](../README.md#platforms-and-build-verification).
