@@ -13,6 +13,9 @@ workspace:
   - packages/features/auth/data
   - packages/features/auth/presentation
   - packages/features/home/presentation
+  - packages/features/settings/domain
+  - packages/features/settings/data
+  - packages/features/settings/presentation
 dev_dependencies:
   melos: ^8.9.0
   flutter_lints: ^6.0.0

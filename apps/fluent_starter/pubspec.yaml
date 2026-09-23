@@ -18,6 +18,9 @@ dependencies:
   auth_data: ^0.1.0
   auth_presentation: ^0.1.0
   home_presentation: ^0.1.0
+  settings_domain: ^0.1.0
+  settings_data: ^0.1.0
+  settings_presentation: ^0.1.0
   cupertino_icons: ^1.0.8
   auto_route: ^11.2.0
   fluent_ui: ^4.16.1

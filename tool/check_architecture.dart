@@ -15,6 +15,13 @@ const allowed = <String, Set<String>>{
   'auth_data': {'auth_domain', 'core_common', 'core_network'},
   'auth_presentation': {'auth_domain', 'core_common', 'core_design_system'},
   'home_presentation': {'core_design_system'},
+  'settings_domain': {'core_common'},
+  'settings_data': {'settings_domain', 'core_common'},
+  'settings_presentation': {
+    'settings_domain',
+    'core_common',
+    'core_design_system',
+  },
   'fluent_starter': {
     'core_common',
     'core_data',
@@ -24,6 +31,9 @@ const allowed = <String, Set<String>>{
     'auth_data',
     'auth_presentation',
     'home_presentation',
+    'settings_domain',
+    'settings_data',
+    'settings_presentation',
   },
 };
 
@@ -178,6 +188,8 @@ List<String> checkArchitecture(Directory root) {
               'core_network',
               'auth_data',
               'auth_presentation',
+              'settings_data',
+              'settings_presentation',
             }.contains(name) &&
             uris.any((uri) => uri.startsWith('package:injectable/'))) {
           errors.add(
