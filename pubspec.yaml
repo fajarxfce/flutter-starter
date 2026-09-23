@@ -45,3 +45,9 @@ melos:
         - architecture
         - analyze
         - test
+    flavors:
+      run: dart run tool/flavors.dart
+    run:dev:
+      run: dart run tool/app.dart run linux dev
+    build:web:
+      run: dart run tool/app.dart build web dev --smoke

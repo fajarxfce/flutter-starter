@@ -18,6 +18,13 @@ void main() {
       );
     });
   }
+  test('native and Dart flavor must agree', () {
+    expect(
+      () =>
+          AppConfig.parse(flavor: 'dev', backend: 'demo', nativeFlavor: 'prod'),
+      throwsArgumentError,
+    );
+  });
   test('API mode rejects absent, insecure or ambiguous origins', () {
     for (final url in [
       '',

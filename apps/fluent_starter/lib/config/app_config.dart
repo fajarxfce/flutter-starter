@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart' show appFlavor;
+
 enum AppFlavor { dev, staging, prod }
 
 enum BackendMode { demo, api }
@@ -19,12 +21,19 @@ final class AppConfig {
     flavor: const String.fromEnvironment('FLAVOR', defaultValue: 'dev'),
     backend: const String.fromEnvironment('BACKEND', defaultValue: 'demo'),
     baseUrl: const String.fromEnvironment('API_BASE_URL'),
+    nativeFlavor: appFlavor,
   );
   factory AppConfig.parse({
     required String flavor,
     required String backend,
     String baseUrl = '',
+    String? nativeFlavor,
   }) {
+    if (nativeFlavor != null && nativeFlavor != flavor) {
+      throw ArgumentError(
+        'Native flavor and FLAVOR must match. Use tool/app.dart.',
+      );
+    }
     final selectedFlavor = AppFlavor.values.byName(flavor);
     final selectedBackend = BackendMode.values.byName(backend);
     if (selectedBackend == BackendMode.api) {

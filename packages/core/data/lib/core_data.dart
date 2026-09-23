@@ -6,7 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Uses memory on web; native platforms use OS credential storage.
 CredentialStore createCredentialStore(String namespace) => kIsWeb
     ? MemoryCredentialStore()
-    : SecureCredentialStore(const FlutterSecureStorage(), namespace);
+    : SecureCredentialStore(
+        const FlutterSecureStorage(
+          mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+        ),
+        namespace,
+      );
 
 final class MemoryCredentialStore implements CredentialStore {
   String? _token;
