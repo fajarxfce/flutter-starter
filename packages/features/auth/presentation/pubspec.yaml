@@ -23,3 +23,5 @@ dev_dependencies:
   freezed: 4.0.1
   bloc_test: ^10.0.0
   core_testing: ^0.1.0
+flutter:
+  uses-material-design: true

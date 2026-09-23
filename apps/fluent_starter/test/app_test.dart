@@ -79,6 +79,29 @@ void main() {
     expect(router.stack.length, 1);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+  testWidgets('compact login supports large text and exposes validation', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    tester.binding.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(
+      tester.binding.platformDispatcher.clearTextScaleFactorTestValue,
+    );
+    await tester.pumpWidget(
+      FluentStarterApp(services: services, router: router),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('login_submit')));
+    await tester.tap(find.byKey(const Key('login_submit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Enter a valid email address.'), findsOneWidget);
+    expect(find.text('Use at least 8 characters.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   test('theme persists through app services recreation', () async {
     final preferences = FakePreferenceStore();
     final first = await createAppServices(

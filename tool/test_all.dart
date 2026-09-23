@@ -15,7 +15,7 @@ Future<void> main() async {
     final flutter = deps?.containsKey('flutter') ?? false;
     final result = await Process.start(
       flutter ? 'flutter' : 'dart',
-      ['test'],
+      ['test', if (flutter) '--no-pub'],
       workingDirectory: directory,
       mode: ProcessStartMode.inheritStdio,
       runInShell: Platform.isWindows,
