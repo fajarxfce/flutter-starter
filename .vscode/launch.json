@@ -2,6 +2,51 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug | dev | Android via WireGuard",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "dev",
+        "--dart-define=FLAVOR=dev",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "10.77.77.3:5555"
+    },
+    {
+      "name": "Debug | staging | Android via WireGuard",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "staging",
+        "--dart-define=FLAVOR=staging",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "10.77.77.3:5555"
+    },
+    {
+      "name": "Debug | prod | Android via WireGuard",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/fluent_starter",
+      "program": "${workspaceFolder}/apps/fluent_starter/lib/main.dart",
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--flavor",
+        "prod",
+        "--dart-define=FLAVOR=prod",
+        "--dart-define=BACKEND=demo"
+      ],
+      "deviceId": "10.77.77.3:5555"
+    },
+    {
       "name": "Debug | dev | Android via SSH tunnel",
       "type": "dart",
       "request": "launch",

@@ -2,13 +2,21 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Physical Android debugging over WireGuard
+
+- Enabled classic ADB TCP on port `5555` through the laptop's authorized USB connection. The VPS then connected directly to the phone's WireGuard address, `10.77.77.3:5555`, with device authorization. Flutter detected a physical SM A725F running Android 16 / API 36.
+- Added dev/staging/prod `Android via WireGuard` debug presets in both editors. All 26 Zed and 22 VS Code configurations passed their debugger schemas; all six new presets have aligned device IDs, flavors, and demo backend flags. The fixed-port setup and reconnection after a phone reboot are documented in `android-remote.md`.
+- Launched the actual Zed Android/WireGuard dev configuration through Flutter DAP on the VPS. Build, installation on the phone, VM-service connection, a breakpoint in `main.dart`, stack inspection, continue, hot reload, and debugger disconnect passed. The test session was stopped; the phone's ADB connection remains available for the user's editor session.
+
+The debugger protocol and physical device were exercised directly; interaction with the Zed/VS Code UI was not automated. No application source or dependency versions changed, so the Dart test suite was not repeated for these presets.
+
 ## Android remote debugging
 
 - Added dev/staging/prod tunnel debug presets to both editors, targeting the VPS's `127.0.0.1:15555` ADB transport. Documented Android Wireless debugging through a laptop SSH tunnel, distinct pairing/connection ports, reconnecting, and direct WireGuard access when the phone itself is reachable through the VPN.
 - Parsed all seven editor JSON files. All 23 Zed and 19 VS Code launch/attach configurations passed their debugger schemas; the six new presets have matching flavors, device IDs, demo backend flags, and valid program paths. OpenSSH's configuration-only `ssh -G` check confirmed the documented loopback forwards and connection options.
 - `dart run tool/app.dart build android dev --smoke`: passed. APK metadata confirms `dev.example.fluentstarter.dev`, a debuggable build, minimum SDK 24, and target SDK 36. The build emitted an Android SDK XML-version warning but completed successfully. Generated sources and dependency lockfiles remained unchanged.
 
-No Android phone was connected to ADB on the VPS. Device pairing, tunnel connectivity, installation, and the editor debug session therefore remain unverified on a physical phone. This configuration/documentation change did not rerun the Dart test suite; its latest full result is recorded below.
+At the initial SSH-tunnel setup, no Android phone was connected to ADB on the VPS. The SSH tunnel and Wireless debugging pairing workflow remain unverified on a physical phone; the later fixed-port WireGuard validation is recorded above. This configuration/documentation change did not rerun the Dart test suite; its latest full result is recorded below.
 
 ## Editor workflows
 

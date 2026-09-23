@@ -2,7 +2,42 @@
 
 In a Zed remote project or VS Code Remote SSH window, Flutter builds and the debug adapter run on the VPS. The application runs on the phone. The phone must appear in `flutter devices` **on the VPS** for installation, logs, breakpoints, and hot reload. Plugging the phone into the laptop does not automatically expose it to the remote project.
 
-Android 11 and newer, including Android 16, support Wireless debugging. Keep the phone and laptop on the same Wi-Fi network. The USB cable can stay connected; the workflow below uses Wi-Fi and only needs an SSH client on the laptop. Flutter, the Android SDK, and ADB stay on the VPS.
+Choose the fixed-port workflow when the phone is a reachable WireGuard peer and USB access through the laptop is available. For access through a laptop without a phone VPN, use the Wireless debugging and SSH tunnel workflow below.
+
+## Fixed ADB port over WireGuard
+
+This workspace's phone uses VPN address `10.77.77.3`. The `Android via WireGuard` editor presets select `10.77.77.3:5555`; update their device address for a different peer. This workflow uses classic ADB TCP with the phone's RSA-key authorization. Traffic between the VPS and phone travels inside WireGuard; it does not use Android's changing Wireless debugging pairing ports.
+
+Connect the phone to the laptop over USB, enable **USB debugging**, and allow the laptop's authorization prompt on the phone. Install [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools) on the laptop if `adb` is unavailable. From a **local laptop terminal**, run:
+
+```sh
+adb devices -l
+adb -d tcpip 5555
+```
+
+The USB device must be listed as `device`, not `unauthorized`. The second command should report `restarting in TCP mode port: 5555`. If more than one USB Android device is connected, replace `-d` with `-s <phone-usb-serial>`. In PowerShell, use `./adb.exe` when running from an extracted Platform-Tools directory that is not on `PATH`.
+
+From the **VPS**, run the following commands. If `adb` is not on `PATH`, use `<Android SDK>/platform-tools/adb` instead; `flutter doctor -v` prints the SDK location.
+
+```sh
+adb connect 10.77.77.3:5555
+adb devices -l
+flutter devices
+```
+
+Unlock the phone and accept the VPS's debugging authorization prompt if it appears. Its key is different from the laptop's USB key. If ADB reports `unauthorized`, accept the prompt and reconnect. Once ADB reports `device`, choose `Debug | dev | Android via WireGuard` in Zed or VS Code. Staging and prod presets are also available. For a terminal run:
+
+```sh
+dart run tool/app.dart run android dev --device=10.77.77.3:5555
+```
+
+The cable can remain connected or be removed after TCP mode is enabled. Repeat the USB `tcpip 5555` command after a phone reboot or an ADB daemon reset if the TCP listener is no longer available. Port `5555` is fixed for this mode; it is not a promise that the listener survives rebooting. Keep Wireless debugging off when using this workflow to avoid mixing two ADB transports.
+
+After stopping the debug session, turn off TCP mode with `adb -s 10.77.77.3:5555 usb` from the VPS, or `adb -d usb` from the laptop with USB connected. This resets the phone's ADB daemon to USB mode. `adb disconnect` alone closes the VPS connection but leaves the phone's TCP listener running. Classic ADB can also listen on the phone's Wi-Fi interface; use a trusted network and stop TCP mode when finished.
+
+## Wireless debugging through an SSH tunnel
+
+Android 11 and newer, including Android 16, support Wireless debugging. Keep the phone and laptop on the same Wi-Fi network. This workflow only needs an SSH client on the laptop; Flutter, the Android SDK, and ADB stay on the VPS.
 
 ## Prepare the phone
 
@@ -73,7 +108,7 @@ If pairing fails, reopen the phone's pairing dialog, update the tunnel's pairing
 
 After stopping the debug session, run `adb disconnect 127.0.0.1:15555` on the VPS and stop the laptop tunnel with Ctrl+C. Disable Wireless debugging on the phone when finished.
 
-## Direct connection over WireGuard
+## Wireless debugging directly over WireGuard
 
 WireGuard on the **laptop alone** does not make the phone's Wi-Fi address reachable from the VPS. Use the SSH tunnel above over that VPN connection; it needs no LAN routing changes.
 
