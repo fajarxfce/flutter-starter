@@ -94,4 +94,61 @@ void main() {
       contains(contains('Injectable annotations are not allowed')),
     );
   });
+  void writeView(String source) {
+    final file = File(
+      p.join(root.path, 'domain/lib/src/views/example_view.dart'),
+    );
+    file.parent.createSync(recursive: true);
+    file.writeAsStringSync(source);
+  }
+
+  test('UI rejects async handlers and helper methods', () {
+    writeView(
+      'class View { void check() async { await repository.restore(); } Widget build() => Button(onPressed: () async { await check(); }); }',
+    );
+    expect(
+      checkArchitecture(root),
+      contains(contains('UI must not declare logic/helper methods')),
+    );
+    expect(
+      checkArchitecture(root),
+      contains(contains('UI must not await operations')),
+    );
+    expect(
+      checkArchitecture(root),
+      contains(contains('UI must not perform asynchronous work')),
+    );
+  });
+  test('UI rejects imperative decisions, mutation and subscriptions', () {
+    writeView(
+      'class View { Widget build() { if (user != null) { route = home; } stream.listen(update); return Page(); } }',
+    );
+    expect(
+      checkArchitecture(root),
+      contains(contains('UI must not make imperative decisions')),
+    );
+    expect(
+      checkArchitecture(root),
+      contains(contains('UI must not mutate application state')),
+    );
+    expect(
+      checkArchitecture(root),
+      contains(contains('UI must not manage asynchronous effects')),
+    );
+  });
+  test('UI cannot import use cases, data, storage or service locators', () {
+    writeView(
+      "import 'package:auth_domain/auth_domain.dart'; import 'package:get_it/get_it.dart';",
+    );
+    expect(
+      checkArchitecture(root),
+      contains(contains('UI must use presentation state and events')),
+    );
+  });
+  test('UI accepts rendering state and dispatching events', () {
+    writeView(
+      'class View { Widget build() => Column(children: [if (state.busy) Progress(), Button(onPressed: () => bloc.add(Submitted()))]); }',
+    );
+    expect(checkArchitecture(root), isEmpty);
+  });
 }

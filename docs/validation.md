@@ -2,6 +2,20 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## UI state and event boundaries
+
+- Removed `AppServices`, `AppScope`, and the application-services factory. UI consumes Bloc state and dispatches events; route composition resolves `LoginBloc` directly from Injectable.
+- `dart run melos run check --no-select`: passed with 68 tests, clean analysis, formatting, and architecture checks.
+- UI architecture regression tests reject helper methods, async work, imperative decisions, mutation, subscriptions, and domain/data/DI imports. The checker normalizes paths for Windows and POSIX; its 14 tests passed after that adjustment.
+- Session Bloc tests cover startup failure, session observation, checking/loading feedback, demo expiry, and logout storage failure. Settings tests cover persisted/unknown themes, storage failures, and ordered writes after rapid selections.
+- Widget tests cover guarded deep links, login/logout/login with a fresh route Bloc, session expiry, nested route/back behavior, and changing appearance through an event. Widget-test containers are created inside the test's fake-async zone so stream callbacks and UI frames use the same scheduler.
+- `dart run melos run generate --no-select`: passed; all 14 generated source files remained byte-for-byte identical on regeneration.
+- Web dev release build: passed, including the Wasm dry run.
+- `bash tool/test_linux.sh`: dev debug build and native integration passed. Login persisted credentials to the isolated OS keyring, the first container was disposed, a new container restored the session, and logout cleared it.
+- Appearance Bloc tests also passed after enabling the package's required Material icon assets.
+
+Android, Windows, iOS, and macOS builds were not repeated for this change. The workspace now contains 13 packages.
+
 ## Modular Injectable, Bloc, and generated navigation
 
 - `dart run melos run check --no-select`: passed, including formatting, strict architecture rules, analyzer, and 51 tests.

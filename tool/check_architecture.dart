@@ -5,6 +5,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'ui_architecture_visitor.dart';
+
 const allowed = <String, Set<String>>{
   'core_common': {},
   'core_data': {'core_common'},
@@ -85,7 +87,14 @@ List<String> checkArchitecture(Directory root) {
         content: file.readAsStringSync(),
         throwIfDiagnostics: false,
       ).unit;
-      final relativePath = p.relative(file.path, from: lib.path);
+      final relativePath = p.posix.joinAll(
+        p.split(p.relative(file.path, from: lib.path)),
+      );
+      final ui =
+          relativePath == 'app.dart' ||
+          relativePath.startsWith('routing/pages/') ||
+          relativePath.startsWith('src/views/') ||
+          relativePath.startsWith('src/widgets/');
       final generated = RegExp(r'\.(g|gr|freezed|config|module)\.dart$')
           .hasMatch(file.path);
       if (relativePath == '$name.dart' &&
@@ -176,6 +185,31 @@ List<String> checkArchitecture(Directory root) {
           final resolved = p.normalize(p.join(p.dirname(file.path), uri));
           if (parsed.hasScheme || !p.isWithin(lib.path, resolved)) {
             errors.add('$name: import escapes library: $uri');
+          }
+        }
+      }
+      if (ui && !generated) {
+        unit.accept(
+          UiArchitectureVisitor(
+            (message) => errors.add('$name/$relativePath: $message'),
+          ),
+        );
+        for (final uri in uris) {
+          final segments = Uri.parse(uri).pathSegments;
+          if (uri.startsWith('package:') &&
+              (segments.first.endsWith('_domain') ||
+                  segments.first.endsWith('_data') ||
+                  {
+                    'dio',
+                    'get_it',
+                    'formz',
+                    'core_common',
+                  }.contains(segments.first) ||
+                  segments.contains('di') ||
+                  segments.contains('config'))) {
+            errors.add(
+              '$name/$relativePath: UI must use presentation state and events, not $uri',
+            );
           }
         }
       }
