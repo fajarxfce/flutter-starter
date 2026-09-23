@@ -1,0 +1,47 @@
+name: fluent_starter_workspace
+publish_to: none
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+workspace:
+  - apps/fluent_starter
+  - packages/core/common
+  - packages/core/data
+  - packages/core/network
+  - packages/core/design_system
+  - packages/core/testing
+  - packages/features/auth/domain
+  - packages/features/auth/data
+  - packages/features/auth/presentation
+  - packages/features/home/presentation
+dev_dependencies:
+  melos: ^8.9.0
+  flutter_lints: ^6.0.0
+  analyzer: ^13.3.0
+  path: ^1.9.1
+  yaml: ^3.1.3
+  test: ^1.26.0
+melos:
+  scripts:
+    generate:
+      exec:
+        command: dart run build_runner build --delete-conflicting-outputs
+        concurrency: 1
+        orderDependents: true
+      packageFilters:
+        dependsOn: build_runner
+    analyze:
+      run: flutter analyze --fatal-infos
+    format:
+      run: dart format apps packages tool
+    format-check:
+      run: dart format --output=none --set-exit-if-changed apps packages tool
+    architecture:
+      run: dart run tool/check_architecture.dart
+    test:
+      run: dart run tool/test_all.dart
+    check:
+      steps:
+        - format-check
+        - architecture
+        - analyze
+        - test

@@ -1,0 +1,25 @@
+name: auth_presentation
+description: Internal auth presentation module for Fluent Starter.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  auth_domain: ^0.1.0
+  core_common: ^0.1.0
+  core_design_system: ^0.1.0
+  fluent_ui: ^4.16.1
+  flutter_bloc: ^9.1.1
+  formz: ^0.8.1
+  freezed_annotation: ^3.1.0
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.10.0
+  freezed: 4.0.1
+  bloc_test: ^10.0.0
+  core_testing: ^0.1.0
