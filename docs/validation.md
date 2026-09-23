@@ -2,6 +2,19 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Safe API calls and storage boundaries
+
+- Added injected `SafeApiCall`, opt-in `ApiRetryPolicy.readOnly`, typed HTTP/decoding/cancellation failures, and an optional final-failure observer with stack traces. `safeStorageCall` and `Result.flatMap` remove repeated exception handling from auth/settings repositories.
+- `dart run melos run check --no-select`: passed with 136 tests, clean analysis, formatting, dependency policy, and architecture checks.
+- Core tests cover synchronous/asynchronous/nullable/void results; HTTP categories; JSON/type errors; final-failure reporting; retry limits, exponential jitter and Retry-After seconds/dates; mutation exclusion; cancellation before execution, during Dio I/O, and during backoff; late errors; and storage short-circuiting.
+- Auth regression tests cover malformed/empty login responses, failed credential reads (including the interceptor), failed cleanup after 401, preserved credentials on timeout, stale 401 after a newer login, and logout during an unfinished credential write. Existing feature DI, Bloc, routing, and appearance tests also passed.
+- `flutter pub get --enforce-lockfile`: passed. The HTTP-date parser now has a central constraint; all 173 resolved package versions remain unchanged.
+- `dart run melos run generate --no-select`: passed; all 14 generated source files remained byte-for-byte identical on regeneration, including Retrofit cancellation forwarding and Injectable registrations.
+- Web dev release build: passed, including the Wasm dry run.
+- `bash tool/test_linux.sh`: dev debug build and native integration passed. Login stored credentials in the isolated OS keyring, a fresh container restored the session, and logout cleared it.
+
+Android, Windows, iOS, and macOS builds were not repeated for this change.
+
 ## Feature-owned use-case registration
 
 - Auth and settings use-case bindings now live in their data packages' `injection.dart`, collected by the existing generated micro-package modules. App DI supplies runtime configuration and composes these modules; it no longer imports either domain package.

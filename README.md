@@ -171,9 +171,31 @@ The provider configures JSON content type, connection/send/receive timeouts, and
 
 `AuthApi` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module.
 
-The router binds `LoginRoute.page` to `BlocProvider(create: (_) => container<LoginBloc>())` directly. Each login route owns a fresh Bloc and closes it on removal. Bootstrap provides the shared session/appearance Blocs by value; their lifecycle belongs to the DI container. There is no application service bag or factory callback between Injectable and a Bloc. `LoginSubmitted` uses `droppable()` to ignore concurrent submissions; email/password edits are ignored while submitting.
+### Safe API and storage boundaries
+
+Core/network registers `SafeApiCall` as an Injectable lazy singleton. Repositories receive it through their constructors. Put transport, checked JSON decoding, and pure DTO-to-domain mapping inside the callback; it returns `Success<T>` or `FailureResult<T>`, including for synchronous exceptions, nullable results, and `void` operations.
+
+```dart
+final result = await _safeApiCall(
+  (token) async =>
+      (await _remote.currentUser(cancelToken: token)).toEntity(),
+  retry: ApiRetryPolicy.readOnly(), // Explicit opt-in for a replayable read.
+);
+```
+
+The default performs one attempt. `ApiRetryPolicy.readOnly` permits GET/HEAD/OPTIONS retries for connection/timeouts and HTTP 408, 429, 502, 503, or 504. It uses exponential backoff with equal jitter, bounded attempts (1–10), and a delay budget of at most one minute per retry. `Retry-After` seconds and HTTP dates set the minimum delay; a server delay exceeding the budget surfaces the failure immediately. Authentication, validation, certificate, cancellation, and decoding failures are not retried. Keep persistence and session mutations outside retried callbacks. The starter's login and session checks retain the default single attempt.
+
+Pass an optional `cancelToken` to `SafeApiCall` and forward the supplied callback token to Dio/Retrofit. Auth endpoints and the remote data source already accept it. Cancellation interrupts backoff and completes with `FailureKind.cancelled`; forwarding the token also stops the transport. Late completion/errors cannot replace that result. Request timeouts remain configured on Dio through `NetworkConfig`.
+
+HTTP errors map to domain categories such as unauthorized, forbidden, not found, validation, conflict, and rate limited. Invalid JSON, checked deserialization errors, and mapping type errors become `invalidResponse`. Failure messages never copy server bodies or exception text. `NetworkConfig.onFailure` optionally receives the final API failure and stack trace once; observer errors cannot escape or replace the operation result.
+
+Storage uses the pure Dart `safeStorageCall` helper from core/common, with an optional user-facing message. It preserves `FailureKind.storage` for keychain/preferences failures without adding network dependencies to settings. `Result.flatMap` chains successful steps and skips later work after a failure; callbacks should guard their own I/O. Auth and settings repositories contain no `try/catch` blocks.
+
+Auth keeps generation checks around asynchronous work: old login responses cannot undo logout, and stale 401 responses cannot clear a newer session. Credential failures in the HTTP interceptor remain storage failures. A 401 clears in-memory authentication; if credential removal fails, that storage failure is returned. Network failures preserve the token for a later attempt.
 
 ### Generated navigation
+
+The router binds `LoginRoute.page` to `BlocProvider(create: (_) => container<LoginBloc>())` directly. Each login route owns a fresh Bloc and closes it on removal. Bootstrap provides the shared session/appearance Blocs by value; their lifecycle belongs to the DI container. There is no application service bag or factory callback between Injectable and a Bloc. `LoginSubmitted` uses `droppable()` to ignore concurrent submissions; email/password edits are ignored while submitting.
 
 `routing/app_router.dart` declares `@AutoRouterConfig`; `@RoutePage` adapters generate `LoginRoute`, `HomeRoute`, `OverviewRoute`, and `PreferencesRoute` in `routing/app_router.gr.dart`. `FluentApp.router` consumes the injected router. The protected `/home` route hosts `AutoTabsRouter`: Overview is `/home`, Preferences is `/home/preferences`, and the Fluent navigation pane reads and updates its active tab. Back returns from Preferences to Overview. Typed navigation can use `HomeRoute(children: [PreferencesRoute()])`.
 
