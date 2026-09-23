@@ -1,1 +1,15 @@
-enum FailureKind { unauthorized, network, timeout, server, storage, unexpected }
+enum FailureKind {
+  unauthorized,
+  forbidden,
+  notFound,
+  validation,
+  conflict,
+  rateLimited,
+  network,
+  timeout,
+  server,
+  cancelled,
+  invalidResponse,
+  storage,
+  unexpected,
+}

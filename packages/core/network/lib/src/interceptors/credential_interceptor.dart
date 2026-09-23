@@ -21,8 +21,17 @@ final class CredentialInterceptor extends Interceptor {
         if (token != null) options.headers['Authorization'] = 'Bearer $token';
       }
       handler.next(options);
-    } on Object catch (error) {
-      handler.reject(DioException(requestOptions: options, error: error));
+    } on Object catch (_, stackTrace) {
+      handler.reject(
+        DioException(
+          requestOptions: options,
+          error: const Failure(
+            FailureKind.storage,
+            'Unable to access secure storage. Please try again.',
+          ),
+          stackTrace: stackTrace,
+        ),
+      );
     }
   }
 }
