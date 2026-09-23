@@ -78,6 +78,38 @@ void main() {
       contains(contains('use Bloc with explicit events')),
     );
   });
+  for (final source in [
+    'class Page extends ui.StatefulWidget {}',
+    'class PageState extends ui.State<Page> {}',
+    'typedef LegacyState<T> = ui.State<T>;',
+    'typedef LegacyCubit = bloc.Cubit<int>;',
+    'mixin Legacy on ChangeNotifier {}',
+    'final count = ValueNotifier(0);',
+    'final count = new ui.ValueNotifier<int>(0);',
+    'final factory = ui.ChangeNotifier.new;',
+    'Widget view() => ui.ValueListenableBuilder(valueListenable: count, builder: render);',
+    'Widget view() => ListenableBuilder(listenable: count, builder: render);',
+    'Widget view() => StatefulBuilder(builder: render);',
+    'void update() { setState(() {}); }',
+    'final update = state.setState;',
+  ]) {
+    test('rejects legacy state outside UI directories: $source', () {
+      File(p.join(root.path, 'domain/lib/example.dart'))
+          .writeAsStringSync(source);
+      expect(
+        checkArchitecture(root),
+        contains(contains('use Bloc with explicit events')),
+      );
+    });
+  }
+  test('accepts Bloc, immutable state, comments and literal UI copy', () {
+    File(p.join(root.path, 'domain/lib/example.dart')).writeAsStringSync('''
+// Replace ChangeNotifier and setState with events.
+class ExampleBloc extends Bloc<Event, ExampleState> {}
+const explanation = 'Cubit, ValueNotifier and StatefulWidget';
+''');
+    expect(checkArchitecture(root), isEmpty);
+  });
   test('rejects service locator access outside app composition', () {
     File(p.join(root.path, 'domain/lib/locator.dart'))
         .writeAsStringSync("import 'package:get_it/get_it.dart';");

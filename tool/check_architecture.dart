@@ -5,6 +5,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
+import 'bloc_architecture_visitor.dart';
 import 'ui_architecture_visitor.dart';
 
 const allowed = <String, Set<String>>{
@@ -107,18 +108,11 @@ List<String> checkArchitecture(Directory root) {
         errors.add('$name: package entrypoint must contain only exports');
       }
       if (!generated) {
-        for (final declaration
-            in unit.declarations.whereType<ClassDeclaration>()) {
-          final base = declaration.extendsClause?.superclass
-              .toSource()
-              .split('<')
-              .first
-              .split('.')
-              .last;
-          if (base == 'Cubit') {
-            errors.add('$name/$relativePath: use Bloc with explicit events');
-          }
-        }
+        unit.accept(
+          BlocArchitectureVisitor(
+            (message) => errors.add('$name/$relativePath: $message'),
+          ),
+        );
         final publicTypes = unit.declarations
             .map(
               (declaration) => switch (declaration) {
