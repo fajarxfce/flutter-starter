@@ -88,6 +88,10 @@ void main() {
     final dio = container<Dio>(instanceName: mainApi);
     await dio.get<Object>('/auth/me');
     await dio.post<Object>('/auth/login');
+    await dio.post<Object>(
+      '/auth/oauth/google/exchange',
+      options: Options(extra: {'authenticated': false}),
+    );
     await dio.post<Object>('https://api.example.com/auth/login?source=test');
     await dio.get<Object>('https://other.example.com/auth/me');
     await dio.get<Object>('https://api.example.com:8443/auth/me');

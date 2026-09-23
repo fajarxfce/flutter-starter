@@ -99,6 +99,33 @@ void main() {
     expect(secondHome, isNot(same(firstHome)));
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  for (final provider in ['google', 'github']) {
+    testWidgets(
+      '$provider demo signs in through the feature route and logs out',
+      (tester) async {
+        await mount(tester);
+        final button = find.byKey(Key('login_$provider'));
+        await tester.ensureVisible(button);
+        await tester.tap(button);
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pumpAndSettle();
+        expect(
+          container<GetCurrentSession>()().user?.email,
+          '$provider@example.com',
+        );
+        expect(router.currentUrl, '/home');
+        expect(find.byKey(const Key('login_email')), findsNothing);
+        await tester.tap(find.byKey(const Key('logout')));
+        await tester.pumpAndSettle();
+        expect(router.currentUrl, '/login');
+        expect(find.byKey(Key('login_$provider')), findsOneWidget);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
   testWidgets('home consumes identity use cases and shows check results', (
     tester,
   ) async {

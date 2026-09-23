@@ -21,6 +21,11 @@ Successful response (`200`):
 
 The token must be nonempty. Invalid credentials return `401`. The client does not attach a stored token to this request.
 
+Google/GitHub sign-in uses browser authorization through an identity backend and
+`POST /auth/oauth/{provider}/exchange`, returning the same session payload. See
+[the OAuth contract and platform setup](oauth.md) for PKCE, callbacks and provider
+configuration. The included providers are simulated in demo mode.
+
 ## Restore or validate a session
 
 `GET /auth/me`, with `Authorization: Bearer <access_token>`:

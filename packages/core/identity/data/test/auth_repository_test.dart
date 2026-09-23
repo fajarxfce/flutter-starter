@@ -4,6 +4,7 @@ import 'package:core_testing/core_testing.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:identity_data/identity_data.dart';
+import 'package:identity_data/src/datasources/demo/demo_oauth_browser.dart';
 import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart' show GetItHelper;
 import 'package:test/test.dart';
@@ -43,6 +44,11 @@ void main() {
     repository = RemoteIdentityRepository(
       AuthRemoteDataSource(AuthApi(dio)),
       local,
+      OAuthRemoteDataSource(
+        AuthApi(dio),
+        DemoOAuthBrowser(dio),
+        OAuthConfiguration(apiOrigin: Uri.parse('https://demo.invalid')),
+      ),
     );
   });
   tearDown(() async {

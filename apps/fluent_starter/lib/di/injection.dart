@@ -67,6 +67,15 @@ Future<GetIt> configureDependencies(
 @module
 abstract class AppModule {
   @lazySingleton
+  OAuthConfiguration oauthConfiguration(AppConfig config) => OAuthConfiguration(
+    apiOrigin: Uri.parse(config.baseUrl),
+    redirectUri: config.oauthRedirectUri.isEmpty
+        ? null
+        : Uri.parse(config.oauthRedirectUri),
+    providers: config.oauthProviders,
+  );
+
+  @lazySingleton
   AppEnvironment environment(AppConfig config) =>
       AppEnvironment(label: config.label, isDemo: config.isDemo);
 

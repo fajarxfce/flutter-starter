@@ -8,7 +8,7 @@ Future<void> main(List<String> args) async {
       !platforms.contains(args[1]) ||
       !{'dev', 'staging', 'prod'}.contains(args[2])) {
     stderr.writeln(
-      'Usage: dart run tool/app.dart <run|build> <platform> <dev|staging|prod> [--api=https://host] [--device=id] [--smoke]',
+      'Usage: dart run tool/app.dart <run|build> <platform> <dev|staging|prod> [--api=https://host] [--oauth-providers=google,github --oauth-redirect=uri] [--device=id] [--smoke]',
     );
     exitCode = 64;
     return;
@@ -16,12 +16,18 @@ Future<void> main(List<String> args) async {
   final [action, platform, flavor, ...options] = args;
   String? api;
   String? device;
+  String? oauthProviders;
+  String? oauthRedirect;
   var smoke = false;
   for (final option in options) {
     if (option.startsWith('--api=')) {
       api = option.substring(6);
     } else if (option.startsWith('--device=')) {
       device = option.substring(9);
+    } else if (option.startsWith('--oauth-providers=')) {
+      oauthProviders = option.substring('--oauth-providers='.length);
+    } else if (option.startsWith('--oauth-redirect=')) {
+      oauthRedirect = option.substring('--oauth-redirect='.length);
     } else if (option == '--smoke') {
       smoke = true;
     } else {
@@ -29,6 +35,14 @@ Future<void> main(List<String> args) async {
       exitCode = 64;
       return;
     }
+  }
+  if ((oauthProviders != null || oauthRedirect != null) &&
+      (api == null || oauthProviders == null || oauthRedirect == null)) {
+    stderr.writeln(
+      'OAuth options require --api, --oauth-providers and --oauth-redirect together.',
+    );
+    exitCode = 64;
+    return;
   }
   if (api != null) {
     final uri = Uri.tryParse(api);
@@ -84,6 +98,12 @@ Future<void> main(List<String> args) async {
     '--dart-define=BACKEND=${api == null ? 'demo' : 'api'}',
   ]);
   if (api != null) command.add('--dart-define=API_BASE_URL=$api');
+  if (oauthProviders != null) {
+    command.add('--dart-define=OAUTH_PROVIDERS=$oauthProviders');
+  }
+  if (oauthRedirect != null) {
+    command.add('--dart-define=OAUTH_REDIRECT_URI=$oauthRedirect');
+  }
   final process = await Process.start(
     'flutter',
     command,

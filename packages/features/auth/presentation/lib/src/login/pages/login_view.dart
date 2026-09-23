@@ -68,7 +68,7 @@ class LoginView extends StatelessWidget {
                         onPressed: busy
                             ? null
                             : () => bloc.add(const LoginSubmitted()),
-                        child: busy
+                        child: busy && state.activeProvider == null
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
@@ -76,6 +76,32 @@ class LoginView extends StatelessWidget {
                               )
                             : const Text('Sign in'),
                       ),
+                      if (state.providers.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.medium),
+                        const Center(child: Text('or')),
+                        const SizedBox(height: AppSpacing.medium),
+                        for (final provider in state.providers)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.small,
+                            ),
+                            child: Button(
+                              key: ValueKey('login_${provider.name}'),
+                              onPressed: busy
+                                  ? null
+                                  : () => bloc.add(
+                                      LoginProviderSubmitted(provider),
+                                    ),
+                              child: state.activeProvider == provider
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: ProgressRing(strokeWidth: 2),
+                                    )
+                                  : Text(provider.label),
+                            ),
+                          ),
+                      ],
                       if (state.error != null) ...[
                         const SizedBox(height: AppSpacing.medium),
                         InfoBar(
@@ -93,7 +119,8 @@ class LoginView extends StatelessWidget {
                 const InfoBar(
                   title: Text('Demo workspace'),
                   content: SelectableText(
-                    'Email: demo@example.com\nPassword: Demo123!',
+                    'Email: demo@example.com\nPassword: Demo123!\n'
+                    'Google and GitHub buttons use simulated demo accounts.',
                   ),
                   severity: InfoBarSeverity.info,
                 ),

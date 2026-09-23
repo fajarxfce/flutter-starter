@@ -4,7 +4,13 @@ import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 
 @InjectableInit.microPackage(
-  ignoreUnregisteredTypes: [GetIt, Login, AppEnvironment],
+  ignoreUnregisteredTypes: [
+    GetIt,
+    Login,
+    LoginWithProvider,
+    GetIdentityProviders,
+    AppEnvironment,
+  ],
   throwOnMissingDependencies: true,
 )
 void configureAuthPresentationPackage() {}

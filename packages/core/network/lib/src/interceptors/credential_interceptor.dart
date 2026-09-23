@@ -13,7 +13,9 @@ final class CredentialInterceptor extends Interceptor {
   ) async {
     try {
       // Credentials are never attached to login or a different origin.
-      if (options.uri.path != '/auth/login' && options.uri.origin == origin) {
+      if (options.extra['authenticated'] != false &&
+          options.uri.path != '/auth/login' &&
+          options.uri.origin == origin) {
         final token = await credentials.read();
         if (token != null) options.headers['Authorization'] = 'Bearer $token';
       }

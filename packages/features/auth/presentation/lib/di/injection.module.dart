@@ -18,7 +18,12 @@ class AuthPresentationPackageModule extends _i526.MicroPackageModule {
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
     gh.factory<_i1001.LoginBloc>(
-      () => _i1001.LoginBloc(gh<_i516.Login>(), gh<_i699.AppEnvironment>()),
+      () => _i1001.LoginBloc(
+        gh<_i516.Login>(),
+        gh<_i516.LoginWithProvider>(),
+        gh<_i516.GetIdentityProviders>(),
+        gh<_i699.AppEnvironment>(),
+      ),
     );
     gh.lazySingleton<_i0.AuthRouter>(() => _i0.AuthRouter(gh<_i174.GetIt>()));
   }

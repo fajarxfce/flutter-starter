@@ -2,6 +2,19 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Provider sign-in
+
+- Added Google/GitHub support through a system-browser OAuth broker contract: random state, S256 PKCE, strict callback validation, a Retrofit application-code exchange, and the same session persistence used by password login. Live API providers require explicit configuration; no OAuth backend or provider credentials are included. `docs/oauth.md` specifies the backend and platform setup.
+- Provider availability and overlapping-authorization policy live in the pure `LoginWithProvider` use case, shared by the identity Injectable micro-package. The repository only coordinates fetching and session persistence; the LoginBloc owns loading and presentation state. Tests verify that multiple callers share the policy and rejected requests never reach the repository.
+- The final workspace quality gate passed formatting, centralized dependency policy, architecture boundaries, analyzer, and **177 tests**. Coverage includes callback/state tampering, duplicate parameters, one-time codes, PKCE mismatch, provider mismatch, cancellation/retry, logout during an outstanding browser attempt, storage failures, provider UI, and DI lifetimes.
+- Re-ran all builders in dependency order: all **19 generated Dart files** retained identical hashes after formatting. Injectable, Freezed, JSON and AutoRoute output is committed.
+- Web release build passed, including Flutter's Wasm compilation dry run. The static callback bridge passed checks for same-origin delivery, history cleanup, and a missing opener. CLI checks verified OAuth flag forwarding and rejection of incomplete configuration. The merged Android manifest contains the application-specific callback activity/scheme.
+- Native integration passed all three methods (password, Google demo, GitHub demo), including secure-store restore through a fresh DI container and logout, on Linux under Xvfb with an isolated keyring and on the physical Android 16 phone over WireGuard. After moving authorization policy into the use case, the workspace suite and Linux integration passed again.
+- Android debug APK builds passed with `flutter_web_auth_2` 5.1.0. Flutter reports that this stable plugin still applies the Kotlin Gradle Plugin; the project's existing legacy Kotlin/DSL compatibility flags remain required. Linux builds need WebKitGTK 4.1 development libraries through the plugin's desktop dependency, even when using an external browser; local dependencies and CI are configured.
+- During the physical test installation, Android rejected an existing dev app signed with a different debug key. Flutter automatically uninstalled/reinstalled that dev app, resetting its local data. This side effect was reported to the user.
+
+The provider flows exercised here are simulated. Real Google/GitHub browser callbacks, server-side provider verification, and production credentials remain untested until an OAuth backend exists. Apple and Windows native builds were not run on this Linux host.
+
 ## Shared identity ownership
 
 - Moved auth's domain/data packages into `packages/core/identity`, with pure domain session snapshots, current-session and observation use cases, and a replaying session stream owned by the local data source. Auth and home depend on the shared domain API.

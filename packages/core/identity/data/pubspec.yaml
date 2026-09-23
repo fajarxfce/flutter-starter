@@ -6,6 +6,10 @@ resolution: workspace
 environment:
   sdk: ">=3.13.0 <4.0.0"
 dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_auth_2: any
+  crypto: any
   injectable: any
   identity_domain: any
   core_common: any

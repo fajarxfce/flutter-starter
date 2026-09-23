@@ -6,6 +6,12 @@ class RecordingRepository implements IdentityRepository {
   String? submittedEmail;
   String? submittedPassword;
   @override
+  Set<IdentityProvider> get providers => const {};
+  @override
+  Future<Result<User>> loginWithProvider(IdentityProvider provider) =>
+      throw UnimplementedError();
+
+  @override
   Session get session => const SessionUnauthenticated();
   @override
   Stream<Session> get sessionChanges => const Stream.empty();

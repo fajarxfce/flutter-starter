@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LoginState {
 
- String get environment; bool get isDemo; EmailInput get email; PasswordInput get password; FormzSubmissionStatus get status; String? get error;
+ String get environment; bool get isDemo; List<LoginProvider> get providers; LoginProvider? get activeProvider; EmailInput get email; PasswordInput get password; FormzSubmissionStatus get status; String? get error;
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $LoginStateCopyWith<LoginState> get copyWith => _$LoginStateCopyWithImpl<LoginSt
 @override
 bool operator ==(Object other) {
   final _this = this as LoginState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LoginState&&(identical(other.environment, _this.environment) || other.environment == _this.environment)&&(identical(other.isDemo, _this.isDemo) || other.isDemo == _this.isDemo)&&(identical(other.email, _this.email) || other.email == _this.email)&&(identical(other.password, _this.password) || other.password == _this.password)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.error, _this.error) || other.error == _this.error));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LoginState&&(identical(other.environment, _this.environment) || other.environment == _this.environment)&&(identical(other.isDemo, _this.isDemo) || other.isDemo == _this.isDemo)&&const DeepCollectionEquality().equals(other.providers, _this.providers)&&(identical(other.activeProvider, _this.activeProvider) || other.activeProvider == _this.activeProvider)&&(identical(other.email, _this.email) || other.email == _this.email)&&(identical(other.password, _this.password) || other.password == _this.password)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.error, _this.error) || other.error == _this.error));
 }
 
 
 @override
 int get hashCode {
   final _this = this as LoginState;
-  return Object.hash(runtimeType,_this.environment,_this.isDemo,_this.email,_this.password,_this.status,_this.error);
+  return Object.hash(runtimeType,_this.environment,_this.isDemo,const DeepCollectionEquality().hash(_this.providers),_this.activeProvider,_this.email,_this.password,_this.status,_this.error);
 }
 
 @override
 String toString() {
   final _this = this as LoginState;
-  return 'LoginState(environment: ${_this.environment}, isDemo: ${_this.isDemo}, email: ${_this.email}, password: ${_this.password}, status: ${_this.status}, error: ${_this.error})';
+  return 'LoginState(environment: ${_this.environment}, isDemo: ${_this.isDemo}, providers: ${_this.providers}, activeProvider: ${_this.activeProvider}, email: ${_this.email}, password: ${_this.password}, status: ${_this.status}, error: ${_this.error})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $LoginStateCopyWith<$Res>  {
   factory $LoginStateCopyWith(LoginState value, $Res Function(LoginState) _then) = _$LoginStateCopyWithImpl;
 @useResult
 $Res call({
- String environment, bool isDemo, EmailInput email, PasswordInput password, FormzSubmissionStatus status, String? error
+ String environment, bool isDemo, List<LoginProvider> providers, LoginProvider? activeProvider, EmailInput email, PasswordInput password, FormzSubmissionStatus status, String? error
 });
 
 
@@ -68,11 +68,13 @@ class _$LoginStateCopyWithImpl<$Res>
 
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? environment = null,Object? isDemo = null,Object? email = null,Object? password = null,Object? status = null,Object? error = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? environment = null,Object? isDemo = null,Object? providers = null,Object? activeProvider = freezed,Object? email = null,Object? password = null,Object? status = null,Object? error = freezed,}) {
   return _then(LoginState(
 environment: null == environment ? _self.environment : environment // ignore: cast_nullable_to_non_nullable
 as String,isDemo: null == isDemo ? _self.isDemo : isDemo // ignore: cast_nullable_to_non_nullable
-as bool,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as bool,providers: null == providers ? _self.providers : providers // ignore: cast_nullable_to_non_nullable
+as List<LoginProvider>,activeProvider: freezed == activeProvider ? _self.activeProvider : activeProvider // ignore: cast_nullable_to_non_nullable
+as LoginProvider?,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as EmailInput,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as PasswordInput,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as FormzSubmissionStatus,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
@@ -161,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String environment,  bool isDemo,  EmailInput email,  PasswordInput password,  FormzSubmissionStatus status,  String? error)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String environment,  bool isDemo,  List<LoginProvider> providers,  LoginProvider? activeProvider,  EmailInput email,  PasswordInput password,  FormzSubmissionStatus status,  String? error)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LoginState() when $default != null:
-return $default(_that.environment,_that.isDemo,_that.email,_that.password,_that.status,_that.error);case _:
+return $default(_that.environment,_that.isDemo,_that.providers,_that.activeProvider,_that.email,_that.password,_that.status,_that.error);case _:
   return orElse();
 
 }
@@ -182,10 +184,10 @@ return $default(_that.environment,_that.isDemo,_that.email,_that.password,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String environment,  bool isDemo,  EmailInput email,  PasswordInput password,  FormzSubmissionStatus status,  String? error)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String environment,  bool isDemo,  List<LoginProvider> providers,  LoginProvider? activeProvider,  EmailInput email,  PasswordInput password,  FormzSubmissionStatus status,  String? error)  $default,) {final _that = this;
 switch (_that) {
 case _LoginState():
-return $default(_that.environment,_that.isDemo,_that.email,_that.password,_that.status,_that.error);case _:
+return $default(_that.environment,_that.isDemo,_that.providers,_that.activeProvider,_that.email,_that.password,_that.status,_that.error);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +204,10 @@ return $default(_that.environment,_that.isDemo,_that.email,_that.password,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String environment,  bool isDemo,  EmailInput email,  PasswordInput password,  FormzSubmissionStatus status,  String? error)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String environment,  bool isDemo,  List<LoginProvider> providers,  LoginProvider? activeProvider,  EmailInput email,  PasswordInput password,  FormzSubmissionStatus status,  String? error)?  $default,) {final _that = this;
 switch (_that) {
 case _LoginState() when $default != null:
-return $default(_that.environment,_that.isDemo,_that.email,_that.password,_that.status,_that.error);case _:
+return $default(_that.environment,_that.isDemo,_that.providers,_that.activeProvider,_that.email,_that.password,_that.status,_that.error);case _:
   return null;
 
 }
@@ -217,11 +219,19 @@ return $default(_that.environment,_that.isDemo,_that.email,_that.password,_that.
 
 
 class _LoginState extends LoginState {
-  const _LoginState({this.environment = '', this.isDemo = false, this.email = const EmailInput.pure(), this.password = const PasswordInput.pure(), this.status = FormzSubmissionStatus.initial, this.error}): super._();
+  const _LoginState({this.environment = '', this.isDemo = false,  List<LoginProvider> providers = const [], this.activeProvider, this.email = const EmailInput.pure(), this.password = const PasswordInput.pure(), this.status = FormzSubmissionStatus.initial, this.error}): _providers = providers,super._();
   
 
 @override@JsonKey() final  String environment;
 @override@JsonKey() final  bool isDemo;
+ final  List<LoginProvider> _providers;
+@override@JsonKey() List<LoginProvider> get providers {
+  if (_providers is EqualUnmodifiableListView) return _providers;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_providers);
+}
+
+@override final  LoginProvider? activeProvider;
 @override@JsonKey() final  EmailInput email;
 @override@JsonKey() final  PasswordInput password;
 @override@JsonKey() final  FormzSubmissionStatus status;
@@ -237,18 +247,18 @@ _$LoginStateCopyWith<_LoginState> get copyWith => __$LoginStateCopyWithImpl<_Log
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LoginState&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.isDemo, isDemo) || other.isDemo == isDemo)&&(identical(other.email, email) || other.email == email)&&(identical(other.password, password) || other.password == password)&&(identical(other.status, status) || other.status == status)&&(identical(other.error, error) || other.error == error));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LoginState&&(identical(other.environment, environment) || other.environment == environment)&&(identical(other.isDemo, isDemo) || other.isDemo == isDemo)&&const DeepCollectionEquality().equals(other.providers, _providers)&&(identical(other.activeProvider, activeProvider) || other.activeProvider == activeProvider)&&(identical(other.email, email) || other.email == email)&&(identical(other.password, password) || other.password == password)&&(identical(other.status, status) || other.status == status)&&(identical(other.error, error) || other.error == error));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,environment,isDemo,email,password,status,error);
+    return Object.hash(runtimeType,environment,isDemo,const DeepCollectionEquality().hash(_providers),activeProvider,email,password,status,error);
 }
 
 @override
 String toString() {
-    return 'LoginState(environment: $environment, isDemo: $isDemo, email: $email, password: $password, status: $status, error: $error)';
+    return 'LoginState(environment: $environment, isDemo: $isDemo, providers: $providers, activeProvider: $activeProvider, email: $email, password: $password, status: $status, error: $error)';
 }
 
 
@@ -259,7 +269,7 @@ abstract mixin class _$LoginStateCopyWith<$Res> implements $LoginStateCopyWith<$
   factory _$LoginStateCopyWith(_LoginState value, $Res Function(_LoginState) _then) = __$LoginStateCopyWithImpl;
 @override @useResult
 $Res call({
- String environment, bool isDemo, EmailInput email, PasswordInput password, FormzSubmissionStatus status, String? error
+ String environment, bool isDemo, List<LoginProvider> providers, LoginProvider? activeProvider, EmailInput email, PasswordInput password, FormzSubmissionStatus status, String? error
 });
 
 
@@ -276,11 +286,13 @@ class __$LoginStateCopyWithImpl<$Res>
 
 /// Create a copy of LoginState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? environment = null,Object? isDemo = null,Object? email = null,Object? password = null,Object? status = null,Object? error = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? environment = null,Object? isDemo = null,Object? providers = null,Object? activeProvider = freezed,Object? email = null,Object? password = null,Object? status = null,Object? error = freezed,}) {
   return _then(_LoginState(
 environment: null == environment ? _self.environment : environment // ignore: cast_nullable_to_non_nullable
 as String,isDemo: null == isDemo ? _self.isDemo : isDemo // ignore: cast_nullable_to_non_nullable
-as bool,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as bool,providers: null == providers ? _self._providers : providers // ignore: cast_nullable_to_non_nullable
+as List<LoginProvider>,activeProvider: freezed == activeProvider ? _self.activeProvider : activeProvider // ignore: cast_nullable_to_non_nullable
+as LoginProvider?,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as EmailInput,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as PasswordInput,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as FormzSubmissionStatus,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable

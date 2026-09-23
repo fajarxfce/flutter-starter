@@ -20,6 +20,12 @@ Future<({IdentityRepository repository, Dio dio, DemoAdapter adapter})> _create(
   final adapter = DemoAdapter(latency: Duration.zero);
   container.registerSingleton<CredentialStore>(credentials);
   container.registerSingleton(
+    const AppEnvironment(label: 'test', isDemo: true),
+  );
+  container.registerSingleton(
+    OAuthConfiguration(apiOrigin: Uri.parse('https://demo.invalid')),
+  );
+  container.registerSingleton(
     BaseOptions(baseUrl: 'https://demo.invalid'),
     instanceName: mainApi,
   );

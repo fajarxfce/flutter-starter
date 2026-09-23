@@ -72,6 +72,26 @@ void main() {
     },
   );
 
+  test('provider use case is shared across callers and rejects concurrent authorization', () async {
+    final container = await configureDependencies(
+      AppConfig.parse(flavor: 'dev', backend: 'demo'),
+      credentials: FakeCredentialStore(),
+      preferences: FakePreferenceStore(),
+    );
+    addTearDown(container.reset);
+    final first = container<LoginWithProvider>();
+    final second = container<LoginWithProvider>();
+    expect(second, same(first));
+    final pending = first(IdentityProvider.google);
+    final rejected = await second(IdentityProvider.github);
+    expect(
+      (rejected as FailureResult<User>).failure.kind,
+      FailureKind.conflict,
+    );
+    expect(await pending, isA<Success<User>>());
+    expect(container<GetCurrentSession>()().user?.email, 'google@example.com');
+  });
+
   test(
     'real backend resolves the platform HTTP adapter without demo fallback',
     () async {

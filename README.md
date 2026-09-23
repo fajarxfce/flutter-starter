@@ -14,7 +14,7 @@ dart run tool/app.dart run linux dev
 
 Replace `linux` with `android`, `ios`, `web`, `windows`, or `macos`. Native builds require their corresponding host/toolchain. Mobile run commands select a single attached device; use `--device=<id>` when more than one is connected. Web uses Chrome by default.
 
-Demo credentials: **demo@example.com / Demo123!**. Every flavor defaults explicitly to **demo**, including release builds; the environment badge remains visible. No real server is contacted in demo mode.
+Demo credentials: **demo@example.com / Demo123!**. Every flavor defaults explicitly to **demo**, including release builds; the environment badge remains visible. Google and GitHub buttons sign in with simulated provider accounts. No real server is contacted in demo mode.
 
 ```sh
 dart run tool/app.dart run android staging --device=emulator-5554
@@ -39,7 +39,7 @@ packages/core/testing              fakes and mock helpers (tests only)
 packages/core/identity/domain      entities, repository contract, use cases
 packages/core/identity/data        Retrofit, remote data source, JSON DTOs, repository
 packages/features/auth/presentation LoginBloc, Freezed state, Formz, login routes/UI
-packages/features/home/presentation dashboard Bloc/UI, session port, feature routes
+packages/features/home/presentation dashboard Bloc/UI, shared identity use cases, feature routes
 packages/features/settings/domain  theme entity, repository contract, use cases
 packages/features/settings/data    persisted appearance preferences
 packages/features/settings/presentation appearance Bloc and preferences routes/UI
@@ -168,7 +168,7 @@ Adding a use case to an existing feature changes that feature's bindings and gen
 | Owner | Injectable registrations |
 |---|---|
 | Core network `lib/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
-| Identity data `lib/di/injection.dart` and annotated classes/factory | Factory `Login`, `RestoreSession`, `Logout`, `WatchSession`, `GetCurrentSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
+| Identity data `lib/di/injection.dart` and annotated classes/factory | Shared `LoginWithProvider` for authorization admission; factory `Login`, `GetIdentityProviders`, `RestoreSession`, `Logout`, `WatchSession`, `GetCurrentSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
 | Auth presentation | Factory `LoginBloc` and shared `AuthRouter` configuration |
 | Home presentation | Factory `HomeBloc` receiving identity use cases and shared `HomeRouter` configuration |
 | Settings data `lib/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
@@ -281,7 +281,7 @@ AutoRoute(
 
 Auth owns `/login`; home supplies `HomeRoute` at the empty child path, and settings supplies `SettingsRoute` at `preferences`. Each tab entry hosts an `AutoRouter` with the feature-owned pages beneath it. `/home` and `/home/preferences` retain their URLs. Only `AppShellPage` is generated in `app_router.gr.dart`; the shell combines feature entry routes in `AutoTabsRouter` and binds the Fluent navigation pane to tab state. The app tab list contains only `HomeRoute` and `SettingsRoute`. Add future home/settings pages beneath those feature roots; their local stack handles push, deep links, and back without changing app page adapters or tab declarations. A new top-level tab or cross-feature flow still requires app composition.
 
-`AuthRouter` binds `LoginRoute.page` directly to `BlocProvider(create: (_) => container<LoginBloc>())`; `HomeRouter` does the same for `HomeBloc`. These providers own fresh factory Blocs and close them when routes are removed. Pages contain no service locator or factories. Bootstrap provides shared session/appearance Blocs by value; their lifecycle belongs to the DI container. `LoginSubmitted` uses `droppable()`; email/password edits are ignored while submitting.
+`AuthRouter` binds `LoginRoute.page` directly to `BlocProvider(create: (_) => container<LoginBloc>())`; `HomeRouter` does the same for `HomeBloc`. These providers own fresh factory Blocs and close them when routes are removed. Pages contain no service locator or factories. Bootstrap provides the shared appearance Bloc by value; its lifecycle belongs to the DI container. `LoginSubmitted` uses `droppable()`; email/password edits are ignored while submitting.
 
 Feature-local navigation uses its generated route types. The app can navigate across features with `AppShellRoute(children: [SettingsRoute(children: [PreferencesRoute()])])`, importing `PreferencesRoute` from settings' public barrel. For a feature-initiated cross-feature flow, define a small contract in the requesting feature and implement it in app composition using the target's public route; do not import app or another feature's presentation. No central registry of string destinations or universal navigator interface is required.
 
@@ -297,7 +297,8 @@ The demo adapter implements Dio's HTTP transport, so the example exercises Retro
 - Network failures preserve stored credentials for retry; a 401 from session verification clears them. Storage failures return an explicit domain failure.
 - Home offers **Check session** and, in demo mode, **Expire demo session**. Invalid credentials, `timeout@example.com`, and `server@example.com` demonstrate error handling; use any valid-length password for the last two.
 - HTTP logs include only method/status/error category, never URL, bodies, credentials, or headers; logging is disabled in profile/release builds.
-- Refresh-token rotation, OAuth, account registration, analytics, and a backend service are intentionally outside this starter's contract.
+- Google/GitHub use a backend-mediated browser flow with PKCE, state validation and a one-time application code. See [provider setup and backend contract](docs/oauth.md). Demo works locally; live OAuth needs a backend and provider registration.
+- Refresh-token rotation, account linking/registration, analytics, and a backend server implementation remain outside this starter's contract.
 
 ## Commands and generated files
 

@@ -1,3 +1,5 @@
+import 'package:auth_presentation/src/login/models/login_provider.dart';
+
 sealed class LoginEvent {
   const LoginEvent();
 }
@@ -14,4 +16,9 @@ final class LoginPasswordChanged extends LoginEvent {
 
 final class LoginSubmitted extends LoginEvent {
   const LoginSubmitted();
+}
+
+final class LoginProviderSubmitted extends LoginEvent {
+  const LoginProviderSubmitted(this.provider);
+  final LoginProvider provider;
 }

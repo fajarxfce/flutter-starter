@@ -52,6 +52,9 @@ extension GetItInjectableX on _i174.GetIt {
       () => appModule.mainApiLogging(),
       instanceName: 'mainApi',
     );
+    gh.lazySingleton<_i188.OAuthConfiguration>(
+      () => appModule.oauthConfiguration(gh<_i209.AppConfig>()),
+    );
     gh.lazySingleton<_i699.AppEnvironment>(
       () => appModule.environment(gh<_i209.AppConfig>()),
     );

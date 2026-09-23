@@ -12,9 +12,15 @@ class MockIdentityRepository extends Mock implements IdentityRepository {}
 
 void main() {
   late MockIdentityRepository repository;
-  setUp(() => repository = MockIdentityRepository());
+  setUp(() {
+    repository = MockIdentityRepository();
+    when(() => repository.providers)
+        .thenReturn(IdentityProvider.values.toSet());
+  });
   LoginBloc create() => LoginBloc(
     Login(repository),
+    LoginWithProvider(repository),
+    GetIdentityProviders(repository),
     const AppEnvironment(label: 'test', isDemo: true),
   );
   void fill(LoginBloc bloc) {
@@ -106,5 +112,70 @@ void main() {
     verify(
       () => repository.login(email: 'demo@example.com', password: 'Demo123!'),
     ).called(2);
+  });
+  test('provider login blocks other methods until it finishes', () async {
+    final pending = Completer<Result<User>>();
+    when(() => repository.loginWithProvider(IdentityProvider.google))
+        .thenAnswer((_) => pending.future);
+    final bloc = create();
+    addTearDown(bloc.close);
+    final submitting = bloc.stream.firstWhere(
+      (state) => state.status.isInProgress,
+    );
+    bloc.add(const LoginProviderSubmitted(LoginProvider.google));
+    await submitting;
+    expect(bloc.state.activeProvider, LoginProvider.google);
+    bloc.add(const LoginProviderSubmitted(LoginProvider.github));
+    bloc.add(const LoginSubmitted());
+    bloc.add(const LoginEmailChanged('ignored@example.com'));
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.email.value, isEmpty);
+    verifyNever(() => repository.loginWithProvider(IdentityProvider.github));
+    verifyNever(
+      () => repository.login(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+      ),
+    );
+    final success = bloc.stream.firstWhere((state) => state.status.isSuccess);
+    pending.complete(
+      const Success(
+        User(id: 'google', email: 'google@example.com', displayName: 'Google'),
+      ),
+    );
+    await success;
+    expect(bloc.state.activeProvider, isNull);
+    verify(() => repository.loginWithProvider(IdentityProvider.google))
+        .called(1);
+  });
+
+  test(
+    'cancelled provider login clears busy state without an error banner',
+    () async {
+      when(
+        () => repository.loginWithProvider(IdentityProvider.github),
+      ).thenAnswer(
+        (_) async =>
+            const FailureResult(Failure(FailureKind.cancelled, 'Cancelled')),
+      );
+      final bloc = create();
+      addTearDown(bloc.close);
+      final finished = bloc.stream.skip(1).first;
+      bloc.add(const LoginProviderSubmitted(LoginProvider.github));
+      final state = await finished;
+      expect(state.status, FormzSubmissionStatus.initial);
+      expect(state.activeProvider, isNull);
+      expect(state.error, isNull);
+    },
+  );
+
+  test('a disabled method ignores synthetic events', () async {
+    when(() => repository.providers).thenReturn({});
+    final bloc = create();
+    addTearDown(bloc.close);
+    bloc.add(const LoginProviderSubmitted(LoginProvider.google));
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.providers, isEmpty);
+    verifyNever(() => repository.loginWithProvider(IdentityProvider.google));
   });
 }

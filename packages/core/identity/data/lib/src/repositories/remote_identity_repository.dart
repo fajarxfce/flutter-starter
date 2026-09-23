@@ -2,6 +2,7 @@ import 'package:core_common/core_common.dart';
 import 'package:core_network/core_network.dart';
 import 'package:identity_data/src/datasources/local/auth_local_data_source.dart';
 import 'package:identity_data/src/datasources/remote/auth_remote_data_source.dart';
+import 'package:identity_data/src/datasources/remote/oauth_remote_data_source.dart';
 import 'package:identity_data/src/mappers/auth_session_mapper.dart';
 import 'package:identity_data/src/mappers/user_mapper.dart';
 import 'package:identity_data/src/requests/login_request.dart';
@@ -10,10 +11,23 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: IdentityRepository)
 final class RemoteIdentityRepository implements IdentityRepository {
-  RemoteIdentityRepository(this._remote, this._local);
+  RemoteIdentityRepository(this._remote, this._local, this._oauth);
 
   final AuthRemoteDataSource _remote;
   final AuthLocalDataSource _local;
+  final OAuthRemoteDataSource _oauth;
+
+  @override
+  Set<IdentityProvider> get providers => _oauth.providers;
+
+  @override
+  Future<Result<User>> loginWithProvider(IdentityProvider provider) {
+    final revision = _local.beginLogin();
+    return networkBoundResource(
+      fetch: () async => (await _oauth.login(provider)).toSession(),
+      save: (session) => _local.saveSession(session, revision: revision),
+    );
+  }
 
   @override
   Session get session => _local.session;

@@ -14,6 +14,12 @@ class FakeIdentityRepository
   Result<void> expireResult = const Success(null);
 
   @override
+  Set<IdentityProvider> get providers => const {};
+  @override
+  Future<Result<User>> loginWithProvider(IdentityProvider provider) =>
+      throw UnimplementedError();
+
+  @override
   Session session;
 
   @override
