@@ -2,6 +2,19 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Shared versions, consolidated DI, and Bloc enforcement
+
+- Root `pubspec_overrides.yaml` owns 29 hosted dependency constraints. All 14 pubspecs use `any` for hosted/workspace dependencies and retain SDK declarations. All 173 resolved dependency versions are unchanged.
+- `flutter pub get --enforce-lockfile` and `dart run melos bootstrap`: passed for all 13 workspace members.
+- Each of the five Injectable micro-packages has one `injection.dart` entry point. App bindings are consolidated in app `di/injection.dart`; the Retrofit factory is directly annotated. Network configuration, provider lifetimes, and disposal remain covered by existing graph/network tests.
+- `dart run melos run check --no-select`: passed with 88 tests, clean analysis, formatting, dependency policy, and architecture checks.
+- Dependency-policy regression tests reject scattered versions, missing central constraints, member overrides, and overridden workspace/SDK sources. Bloc checks reject legacy state APIs across handwritten production files, including aliases, prefixed constructors, mixins, and tear-offs outside UI folders.
+- `dart run melos run generate --no-select`: passed; all 14 generated source files stayed byte-for-byte identical on regeneration.
+- Web dev release build: passed, including the Wasm dry run.
+- `bash tool/test_linux.sh`: dev debug build and native integration passed. Login persisted credentials to the isolated OS keyring, a new container restored the session, and logout cleared it.
+
+Android, Windows, iOS, and macOS builds were not repeated for this change.
+
 ## UI state and event boundaries
 
 - Removed `AppServices`, `AppScope`, and the application-services factory. UI consumes Bloc state and dispatches events; route composition resolves `LoginBloc` directly from Injectable.
