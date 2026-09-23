@@ -15,7 +15,6 @@ import 'package:fluent_starter/routing/pages/home_page.dart' as _i1;
 import 'package:fluent_starter/routing/pages/login_page.dart' as _i2;
 import 'package:fluent_starter/routing/pages/overview_page.dart' as _i3;
 import 'package:fluent_starter/routing/pages/preferences_page.dart' as _i4;
-import 'package:fluent_ui/fluent_ui.dart' as _i6;
 
 /// generated route for
 /// [_i1.HomePage]
@@ -35,51 +34,18 @@ class HomeRoute extends _i5.PageRouteInfo<void> {
 
 /// generated route for
 /// [_i2.LoginPage]
-class LoginRoute extends _i5.PageRouteInfo<LoginRouteArgs> {
-  LoginRoute({
-    void Function(bool)? onResult,
-    _i6.Key? key,
-    List<_i5.PageRouteInfo>? children,
-  }) : super(
-         LoginRoute.name,
-         args: LoginRouteArgs(onResult: onResult, key: key),
-         initialChildren: children,
-       );
+class LoginRoute extends _i5.PageRouteInfo<void> {
+  const LoginRoute({List<_i5.PageRouteInfo>? children})
+    : super(LoginRoute.name, initialChildren: children);
 
   static const String name = 'LoginRoute';
 
   static _i5.PageInfo page = _i5.PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<LoginRouteArgs>(
-        orElse: () => const LoginRouteArgs(),
-      );
-      return _i2.LoginPage(onResult: args.onResult, key: args.key);
+      return const _i2.LoginPage();
     },
   );
-}
-
-class LoginRouteArgs {
-  const LoginRouteArgs({this.onResult, this.key});
-
-  final void Function(bool)? onResult;
-
-  final _i6.Key? key;
-
-  @override
-  String toString() {
-    return 'LoginRouteArgs{onResult: $onResult, key: $key}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! LoginRouteArgs) return false;
-    return key == other.key;
-  }
-
-  @override
-  int get hashCode => key.hashCode;
 }
 
 /// generated route for

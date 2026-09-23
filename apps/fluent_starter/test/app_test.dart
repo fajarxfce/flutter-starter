@@ -1,30 +1,42 @@
 import 'dart:async';
 
+import 'package:auth_presentation/auth_presentation.dart';
 import 'package:core_testing/core_testing.dart';
 import 'package:fluent_starter/app.dart';
-import 'package:fluent_starter/app_services.dart';
 import 'package:fluent_starter/config/app_config.dart';
-import 'package:fluent_starter/di/app_services_factory.dart';
+import 'package:fluent_starter/di/composition.dart';
 import 'package:fluent_starter/routing/app_router.dart';
 import 'package:fluent_starter/routing/app_router.gr.dart';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
+import 'package:settings_presentation/settings_presentation.dart';
 
 void main() {
-  late AppServices services;
+  late GetIt container;
   late AppRouter router;
-  setUp(() async {
-    services = await createAppServices(
+  setUp(() => container = GetIt.asNewInstance());
+  tearDown(() => container.reset());
+  Future<void> mount(WidgetTester tester) async {
+    container = await configureDependencies(
       AppConfig.parse(flavor: 'dev', backend: 'demo'),
       credentials: FakeCredentialStore(),
       preferences: FakePreferenceStore(),
     );
-    router = services.createRouter();
-  });
-  tearDown(() async {
-    services.theme.dispose();
-    await services.dispose();
-  });
+    router = container<AppRouter>();
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: container<SessionBloc>()),
+          BlocProvider.value(value: container<AppearanceBloc>()),
+        ],
+        child: FluentStarterApp(routerConfig: router.config()),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
   Future<void> signIn(WidgetTester tester) async {
     await tester.enterText(
       find.byKey(const Key('login_email')),
@@ -37,13 +49,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('login, protected home, logout and back navigation', (
+  testWidgets('login, logout and fresh login replace the protected stack', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      FluentStarterApp(services: services, router: router),
-    );
-    await tester.pumpAndSettle();
+    await mount(tester);
     expect(find.text('Sign in'), findsOneWidget);
     await signIn(tester);
     expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
@@ -51,7 +60,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
     expect(router.stack.length, 1);
-    expect(services.repository.currentUser, isNull);
+    expect(container<SessionBloc>().state.user, isNull);
+    await signIn(tester);
+    expect(find.text('Welcome, Alex Morgan'), findsOneWidget);
+    expect(router.stack.length, 1);
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('protected nested route is restored after login', (tester) async {
@@ -60,10 +72,7 @@ void main() {
     addTearDown(
       tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
     );
-    await tester.pumpWidget(
-      FluentStarterApp(services: services, router: router),
-    );
-    await tester.pumpAndSettle();
+    await mount(tester);
     await signIn(tester);
     expect(find.text('Appearance'), findsOneWidget);
     expect(router.currentUrl, '/home/preferences');
@@ -77,10 +86,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(
-      FluentStarterApp(services: services, router: router),
-    );
-    await tester.pumpAndSettle();
+    await mount(tester);
     await signIn(tester);
     expect(router.currentUrl, '/home');
     await tester.tap(find.text('Preferences'));
@@ -98,18 +104,34 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('expired session removes the protected page', (tester) async {
-    await tester.runAsync(
-      () => services.login(email: 'demo@example.com', password: 'Demo123!'),
-    );
-    await tester.pumpWidget(
-      FluentStarterApp(services: services, router: router),
-    );
-    await tester.pumpAndSettle();
+    await mount(tester);
+    await signIn(tester);
     await tester.tap(find.text('Expire demo session'));
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
     expect(router.stack.length, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('appearance selection dispatches an event and updates the app', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        '/home/preferences';
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+    await mount(tester);
+    await signIn(tester);
+    await tester.tap(find.byKey(const Key('appearance_theme')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark').last);
+    await tester.pumpAndSettle();
+    expect(container<AppearanceBloc>().state.mode, ThemeMode.dark);
+    expect(
+      tester.widget<FluentApp>(find.byType(FluentApp)).themeMode,
+      ThemeMode.dark,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('compact login supports large text and exposes validation', (
@@ -123,10 +145,7 @@ void main() {
     addTearDown(
       tester.binding.platformDispatcher.clearTextScaleFactorTestValue,
     );
-    await tester.pumpWidget(
-      FluentStarterApp(services: services, router: router),
-    );
-    await tester.pumpAndSettle();
+    await mount(tester);
     await tester.ensureVisible(find.byKey(const Key('login_submit')));
     await tester.tap(find.byKey(const Key('login_submit')));
     await tester.pumpAndSettle();
@@ -135,23 +154,27 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
-  test('theme persists through app services recreation', () async {
+  test('theme persists through a fresh dependency container', () async {
     final preferences = FakePreferenceStore();
-    final first = await createAppServices(
-      services.config,
+    final config = AppConfig.parse(flavor: 'dev', backend: 'demo');
+    final first = await configureDependencies(
+      config,
       credentials: FakeCredentialStore(),
       preferences: preferences,
     );
-    await first.setTheme(ThemeMode.dark);
-    final second = await createAppServices(
-      services.config,
+    addTearDown(first.reset);
+    final appearance = first<AppearanceBloc>();
+    final saved = appearance.stream.firstWhere(
+      (state) => state.mode == ThemeMode.dark && !state.saving,
+    );
+    appearance.add(const AppearanceThemeSelected(ThemeMode.dark));
+    await saved;
+    final second = await configureDependencies(
+      config,
       credentials: FakeCredentialStore(),
       preferences: preferences,
     );
-    expect(second.theme.value, ThemeMode.dark);
-    first.theme.dispose();
-    second.theme.dispose();
-    await first.dispose();
-    await second.dispose();
+    addTearDown(second.reset);
+    expect(second<AppearanceBloc>().state.mode, ThemeMode.dark);
   });
 }

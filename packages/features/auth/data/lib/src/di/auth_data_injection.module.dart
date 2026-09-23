@@ -11,6 +11,8 @@ import 'package:auth_data/src/datasources/remote/auth_remote_data_source.dart'
     as _i471;
 import 'package:auth_data/src/di/auth_api_module.dart' as _i128;
 import 'package:auth_data/src/di/auth_repository_disposer.dart' as _i227;
+import 'package:auth_data/src/repositories/adapter_demo_session_repository.dart'
+    as _i574;
 import 'package:auth_data/src/repositories/remote_auth_repository.dart'
     as _i168;
 import 'package:auth_domain/auth_domain.dart' as _i470;
@@ -23,6 +25,9 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
     final authApiModule = _$AuthApiModule();
+    gh.lazySingleton<_i470.DemoSessionRepository>(
+      () => _i574.AdapterDemoSessionRepository(gh<_i361.Dio>()),
+    );
     gh.lazySingleton<_i42.AuthApi>(
       () => authApiModule.authApi(gh<_i361.Dio>()),
     );

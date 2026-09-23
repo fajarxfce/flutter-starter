@@ -1,10 +1,22 @@
+import 'package:auth_presentation/auth_presentation.dart';
 import 'package:fluent_starter/app.dart';
 import 'package:fluent_starter/config/app_config.dart';
-import 'package:fluent_starter/di/app_services_factory.dart';
+import 'package:fluent_starter/di/composition.dart';
+import 'package:fluent_starter/routing/app_router.dart';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:settings_presentation/settings_presentation.dart';
 
 Future<void> bootstrap(AppConfig config) async {
   WidgetsFlutterBinding.ensureInitialized();
-  final services = await createAppServices(config);
-  runApp(FluentStarterApp(services: services));
+  final container = await configureDependencies(config);
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: container<SessionBloc>()),
+        BlocProvider.value(value: container<AppearanceBloc>()),
+      ],
+      child: FluentStarterApp(routerConfig: container<AppRouter>().config()),
+    ),
+  );
 }

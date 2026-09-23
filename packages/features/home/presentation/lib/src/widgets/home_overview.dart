@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:core_design_system/core_design_system.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 
@@ -20,9 +18,9 @@ class HomeOverview extends StatelessWidget {
   final String environment;
   final bool busy;
   final String? message;
-  final Future<void> Function() onCheckSession;
-  final Future<void> Function() onLogout;
-  final Future<void> Function()? onExpireDemoSession;
+  final VoidCallback onCheckSession;
+  final VoidCallback onLogout;
+  final VoidCallback? onExpireDemoSession;
   @override
   Widget build(BuildContext context) => PageBody(
     child: Column(
@@ -51,17 +49,17 @@ class HomeOverview extends StatelessWidget {
           runSpacing: AppSpacing.medium,
           children: [
             FilledButton(
-              onPressed: busy ? null : () => unawaited(onCheckSession()),
+              onPressed: busy ? null : onCheckSession,
               child: const Text('Check session'),
             ),
             Button(
               key: const Key('logout'),
-              onPressed: () => unawaited(onLogout()),
+              onPressed: busy ? null : onLogout,
               child: const Text('Sign out'),
             ),
             if (onExpireDemoSession != null)
               Button(
-                onPressed: () => unawaited(onExpireDemoSession!()),
+                onPressed: busy ? null : onExpireDemoSession,
                 child: const Text('Expire demo session'),
               ),
           ],

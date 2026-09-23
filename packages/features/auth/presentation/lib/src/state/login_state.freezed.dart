@@ -214,8 +214,8 @@ return $default(_that.email,_that.password,_that.status,_that.error);case _:
 /// @nodoc
 
 
-class _LoginState implements LoginState {
-  const _LoginState({this.email = const EmailInput.pure(), this.password = const PasswordInput.pure(), this.status = FormzSubmissionStatus.initial, this.error});
+class _LoginState extends LoginState {
+  const _LoginState({this.email = const EmailInput.pure(), this.password = const PasswordInput.pure(), this.status = FormzSubmissionStatus.initial, this.error}): super._();
   
 
 @override@JsonKey() final  EmailInput email;

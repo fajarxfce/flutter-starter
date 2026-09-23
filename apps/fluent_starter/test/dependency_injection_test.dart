@@ -29,7 +29,7 @@ void main() {
       final repository = container<AuthRepository>();
       expect(repository, isA<RemoteAuthRepository>());
       expect(container<AuthRepository>(), same(repository));
-      expect(container<SessionGuard>().repository, same(repository));
+      expect(container<SessionGuard>().session, same(container<SessionBloc>()));
       expect(container<HttpClientAdapter>(), isA<DemoAdapter>());
 
       final bloc = container<LoginBloc>();
@@ -40,9 +40,7 @@ void main() {
       expect(container<Login>(), isNot(same(container<Login>())));
       final router = container<AppRouter>();
       final secondRouter = container<AppRouter>();
-      addTearDown(router.dispose);
-      addTearDown(secondRouter.dispose);
-      expect(secondRouter, isNot(same(router)));
+      expect(secondRouter, same(router));
 
       final signedIn = repository.sessionChanges.firstWhere(
         (user) => user != null,

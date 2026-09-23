@@ -13,4 +13,12 @@ abstract class AuthUseCaseModule {
 
   @injectable
   Logout logout(AuthRepository repository) => Logout(repository);
+
+  @injectable
+  WatchSession watchSession(AuthRepository repository) =>
+      WatchSession(repository);
+
+  @injectable
+  ExpireDemoSession expireDemoSession(DemoSessionRepository repository) =>
+      ExpireDemoSession(repository);
 }
