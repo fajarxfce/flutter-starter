@@ -15,7 +15,7 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     return BlocProvider(
-      create: (_) => LoginCubit(services.login),
+      create: (_) => services.createLoginBloc(),
       child: LoginView(
         environment: services.config.label,
         isDemo: services.config.isDemo,

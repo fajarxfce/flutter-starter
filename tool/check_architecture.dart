@@ -76,7 +76,7 @@ List<String> checkArchitecture(Directory root) {
         throwIfDiagnostics: false,
       ).unit;
       final relativePath = p.relative(file.path, from: lib.path);
-      final generated = RegExp(r'\.(g|gr|freezed|config)\.dart$')
+      final generated = RegExp(r'\.(g|gr|freezed|config|module)\.dart$')
           .hasMatch(file.path);
       if (relativePath == '$name.dart' &&
           (unit.declarations.isNotEmpty ||
@@ -88,6 +88,18 @@ List<String> checkArchitecture(Directory root) {
         errors.add('$name: package entrypoint must contain only exports');
       }
       if (!generated) {
+        for (final declaration
+            in unit.declarations.whereType<ClassDeclaration>()) {
+          final base = declaration.extendsClause?.superclass
+              .toSource()
+              .split('<')
+              .first
+              .split('.')
+              .last;
+          if (base == 'Cubit') {
+            errors.add('$name/$relativePath: use Bloc with explicit events');
+          }
+        }
         final publicTypes = unit.declarations
             .map(
               (declaration) => switch (declaration) {
@@ -157,13 +169,21 @@ List<String> checkArchitecture(Directory root) {
           }
         }
       }
-      if (name != 'fluent_starter' &&
-          uris.any(
-            (u) =>
-                u.startsWith('package:get_it/') ||
-                u.startsWith('package:injectable/'),
-          )) {
-        errors.add('$name: service locator/DI belongs to app composition');
+      if (name != 'fluent_starter') {
+        if (!generated &&
+            uris.any((uri) => uri.startsWith('package:get_it/'))) {
+          errors.add('$name: service locator belongs to app composition');
+        }
+        if (!{
+              'core_network',
+              'auth_data',
+              'auth_presentation',
+            }.contains(name) &&
+            uris.any((uri) => uri.startsWith('package:injectable/'))) {
+          errors.add(
+            '$name: Injectable annotations are not allowed in this layer',
+          );
+        }
       }
     }
   }

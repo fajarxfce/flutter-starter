@@ -1,8 +1,10 @@
 import 'package:auth_data/auth_data.dart';
 import 'package:auth_domain/auth_domain.dart';
+import 'package:auth_presentation/auth_presentation.dart';
 import 'package:core_common/core_common.dart';
 import 'package:dio/dio.dart';
 import 'package:fluent_starter/config/app_config.dart';
+import 'package:fluent_starter/routing/app_router.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 
 final class AppServices {
@@ -15,6 +17,8 @@ final class AppServices {
     required this.preferences,
     required this.dio,
     required this.dispose,
+    required this.createLoginBloc,
+    required this.createRouter,
   });
   final AppConfig config;
   final AuthRepository repository;
@@ -24,6 +28,8 @@ final class AppServices {
   final PreferenceStore preferences;
   final Dio dio;
   final Future<void> Function() dispose;
+  final LoginBloc Function() createLoginBloc;
+  final AppRouter Function() createRouter;
   final theme = ValueNotifier(ThemeMode.system);
   String? sessionMessage;
   Future<void> prepare() async {

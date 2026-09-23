@@ -23,6 +23,10 @@ dev_dependencies:
 melos:
   scripts:
     generate:
+      steps:
+        - generate:build
+        - format
+    generate:build:
       exec:
         command: dart run build_runner build
         concurrency: 1

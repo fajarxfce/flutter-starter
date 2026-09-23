@@ -1,6 +1,5 @@
-import 'dart:async';
-
-import 'package:auth_presentation/src/cubit/login_cubit.dart';
+import 'package:auth_presentation/src/bloc/login_bloc.dart';
+import 'package:auth_presentation/src/events/login_event.dart';
 import 'package:auth_presentation/src/state/login_state.dart';
 import 'package:core_design_system/core_design_system.dart';
 import 'package:fluent_ui/fluent_ui.dart';
@@ -20,13 +19,13 @@ class LoginView extends StatelessWidget {
   final bool isDemo;
   final String? sessionMessage;
   @override
-  Widget build(BuildContext context) => BlocConsumer<LoginCubit, LoginState>(
+  Widget build(BuildContext context) => BlocConsumer<LoginBloc, LoginState>(
     listenWhen: (previous, current) => previous.status != current.status,
     listener: (context, state) {
       if (state.status.isSuccess) onSignedIn();
     },
     builder: (context, state) {
-      final cubit = context.read<LoginCubit>();
+      final bloc = context.read<LoginBloc>();
       final busy = state.status.isInProgress;
       return ScaffoldPage(
         content: PageBody(
@@ -64,7 +63,8 @@ class LoginView extends StatelessWidget {
                           keyboardType: TextInputType.emailAddress,
                           autofillHints: const [AutofillHints.username],
                           textInputAction: TextInputAction.next,
-                          onChanged: cubit.emailChanged,
+                          onChanged: (email) =>
+                              bloc.add(LoginEmailChanged(email)),
                         ),
                       ),
                       if (state.email.displayError != null)
@@ -79,8 +79,9 @@ class LoginView extends StatelessWidget {
                           placeholder: 'At least 8 characters',
                           autofillHints: const [AutofillHints.password],
                           textInputAction: TextInputAction.done,
-                          onChanged: cubit.passwordChanged,
-                          onSubmitted: (_) => unawaited(cubit.submit()),
+                          onChanged: (password) =>
+                              bloc.add(LoginPasswordChanged(password)),
+                          onSubmitted: (_) => bloc.add(const LoginSubmitted()),
                         ),
                       ),
                       if (state.password.displayError != null)
@@ -90,7 +91,7 @@ class LoginView extends StatelessWidget {
                         key: const Key('login_submit'),
                         onPressed: busy
                             ? null
-                            : () => unawaited(cubit.submit()),
+                            : () => bloc.add(const LoginSubmitted()),
                         child: busy
                             ? const SizedBox(
                                 width: 20,

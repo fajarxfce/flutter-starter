@@ -1,16 +1,19 @@
 import 'dart:async';
 
-import 'package:auth_data/src/datasources/remote/auth_api.dart';
+import 'package:auth_data/src/datasources/remote/auth_remote_data_source.dart';
+import 'package:auth_data/src/di/auth_repository_disposer.dart';
 import 'package:auth_data/src/mappers/user_mapper.dart';
 import 'package:auth_data/src/requests/login_request.dart';
 import 'package:auth_data/src/responses/login_response.dart';
 import 'package:auth_domain/auth_domain.dart';
 import 'package:core_common/core_common.dart';
 import 'package:core_network/core_network.dart';
+import 'package:injectable/injectable.dart';
 
+@LazySingleton(as: AuthRepository, dispose: disposeAuthRepository)
 final class RemoteAuthRepository implements AuthRepository {
-  RemoteAuthRepository(this._api, this._credentials);
-  final AuthApi _api;
+  RemoteAuthRepository(this._remote, this._credentials);
+  final AuthRemoteDataSource _remote;
   final CredentialStore _credentials;
   final _sessions = StreamController<User?>.broadcast();
   User? _user;
@@ -43,7 +46,7 @@ final class RemoteAuthRepository implements AuthRepository {
     final generation = ++_generation;
     late final LoginResponse response;
     try {
-      response = await _api.login(
+      response = await _remote.login(
         LoginRequest(email: email, password: password),
       );
     } on Object catch (error) {
@@ -83,7 +86,7 @@ final class RemoteAuthRepository implements AuthRepository {
       return const FailureResult(_storageFailure);
     }
     try {
-      final user = (await _api.me()).toEntity();
+      final user = (await _remote.currentUser()).toEntity();
       if (generation != _generation || _disposed) {
         return const FailureResult(_cancelled);
       }

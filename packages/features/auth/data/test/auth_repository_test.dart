@@ -4,6 +4,8 @@ import 'package:core_common/core_common.dart';
 import 'package:core_network/core_network.dart';
 import 'package:core_testing/core_testing.dart';
 import 'package:dio/dio.dart';
+import 'package:get_it/get_it.dart';
+import 'package:injectable/injectable.dart' show GetItHelper;
 import 'package:test/test.dart';
 
 void main() {
@@ -11,16 +13,34 @@ void main() {
   late DemoAdapter adapter;
   late Dio dio;
   late RemoteAuthRepository repository;
-  setUp(() {
+  final containers = <GetIt>[];
+  Future<Dio> createClient({void Function(String)? log}) async {
+    final container = GetIt.asNewInstance();
+    containers.add(container);
+    container.registerSingleton(
+      NetworkConfig(baseUrl: 'https://demo.invalid', log: log),
+    );
+    container.registerSingleton<CredentialStore>(store);
+    container.registerSingleton<HttpClientAdapter>(adapter);
+    await CoreNetworkPackageModule().init(GetItHelper(container));
+    return container<Dio>();
+  }
+
+  setUp(() async {
     store = FakeCredentialStore();
     adapter = DemoAdapter(latency: Duration.zero);
-    dio = createDio(baseUrl: 'https://demo.invalid', credentials: store)
-      ..httpClientAdapter = adapter;
-    repository = RemoteAuthRepository(AuthApi(dio), store);
+    dio = await createClient();
+    repository = RemoteAuthRepository(
+      AuthRemoteDataSource(AuthApi(dio)),
+      store,
+    );
   });
   tearDown(() async {
     await repository.dispose();
-    dio.close(force: true);
+    for (final container in containers) {
+      await container.reset();
+    }
+    containers.clear();
   });
   Future<Result<User>> login({
     String email = 'demo@example.com',
@@ -96,11 +116,7 @@ void main() {
   test('logs never contain passwords or tokens', () async {
     final logs = <String>[];
     dio.close();
-    dio = createDio(
-      baseUrl: 'https://demo.invalid',
-      credentials: store,
-      log: logs.add,
-    )..httpClientAdapter = adapter;
+    dio = await createClient(log: logs.add);
     final api = AuthApi(dio);
     await api.login(
       const LoginRequest(email: 'demo@example.com', password: 'Demo123!'),

@@ -12,49 +12,54 @@
 
 import 'package:auth_data/auth_data.dart' as _i1005;
 import 'package:auth_domain/auth_domain.dart' as _i470;
-import 'package:core_common/core_common.dart' as _i699;
+import 'package:auth_presentation/auth_presentation.dart' as _i612;
+import 'package:core_network/core_network.dart' as _i309;
 import 'package:dio/dio.dart' as _i361;
 import 'package:fluent_starter/config/app_config.dart' as _i209;
-import 'package:fluent_starter/di/auth_repository_disposer.dart' as _i226;
-import 'package:fluent_starter/di/composition_module.dart' as _i333;
+import 'package:fluent_starter/di/modules/auth_use_case_module.dart' as _i1;
+import 'package:fluent_starter/di/modules/http_transport_module.dart' as _i687;
+import 'package:fluent_starter/routing/app_router.dart' as _i902;
+import 'package:fluent_starter/routing/guards/session_guard.dart' as _i749;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
-  _i174.GetIt init({
+  Future<_i174.GetIt> init({
     String? environment,
     _i526.EnvironmentFilter? environmentFilter,
-  }) {
+  }) async {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
-    final compositionModule = _$CompositionModule();
-    gh.lazySingleton<_i361.Dio>(
-      () => compositionModule.dio(
-        gh<_i209.AppConfig>(),
-        gh<_i699.CredentialStore>(),
-      ),
+    await _i309.CoreNetworkPackageModule().init(gh);
+    await _i1005.AuthDataPackageModule().init(gh);
+    await _i612.AuthPresentationPackageModule().init(gh);
+    final httpTransportModule = _$HttpTransportModule();
+    final authUseCaseModule = _$AuthUseCaseModule();
+    gh.lazySingleton<_i309.NetworkConfig>(
+      () => httpTransportModule.networkConfig(gh<_i209.AppConfig>()),
     );
-    gh.lazySingleton<_i1005.AuthApi>(
-      () => compositionModule.api(gh<_i361.Dio>()),
+    gh.lazySingleton<_i361.HttpClientAdapter>(
+      () => httpTransportModule.httpClientAdapter(gh<_i209.AppConfig>()),
     );
-    gh.lazySingleton<_i470.AuthRepository>(
-      () => compositionModule.repository(
-        gh<_i1005.AuthApi>(),
-        gh<_i699.CredentialStore>(),
-      ),
-      dispose: _i226.disposeRepository,
+    gh.lazySingleton<_i749.SessionGuard>(
+      () => _i749.SessionGuard(gh<_i470.AuthRepository>()),
     );
     gh.factory<_i470.Login>(
-      () => compositionModule.login(gh<_i470.AuthRepository>()),
+      () => authUseCaseModule.login(gh<_i470.AuthRepository>()),
     );
     gh.factory<_i470.RestoreSession>(
-      () => compositionModule.restore(gh<_i470.AuthRepository>()),
+      () => authUseCaseModule.restoreSession(gh<_i470.AuthRepository>()),
     );
     gh.factory<_i470.Logout>(
-      () => compositionModule.logout(gh<_i470.AuthRepository>()),
+      () => authUseCaseModule.logout(gh<_i470.AuthRepository>()),
+    );
+    gh.factory<_i902.AppRouter>(
+      () => _i902.AppRouter(gh<_i749.SessionGuard>()),
     );
     return this;
   }
 }
 
-class _$CompositionModule extends _i333.CompositionModule {}
+class _$HttpTransportModule extends _i687.HttpTransportModule {}
+
+class _$AuthUseCaseModule extends _i1.AuthUseCaseModule {}

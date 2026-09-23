@@ -16,7 +16,7 @@ void main() {
       credentials: FakeCredentialStore(),
       preferences: FakePreferenceStore(),
     );
-    router = AppRouter(services.repository);
+    router = services.createRouter();
   });
   tearDown(() async {
     services.theme.dispose();
@@ -29,6 +29,7 @@ void main() {
     );
     await tester.enterText(find.byKey(const Key('login_password')), 'Demo123!');
     await tester.tap(find.byKey(const Key('login_submit')));
+    await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
   }

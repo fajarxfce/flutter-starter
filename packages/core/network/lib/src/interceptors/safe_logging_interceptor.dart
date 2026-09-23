@@ -1,11 +1,14 @@
+import 'package:core_network/src/config/network_config.dart';
 import 'package:dio/dio.dart';
+import 'package:injectable/injectable.dart';
 
+@lazySingleton
 final class SafeLoggingInterceptor extends Interceptor {
-  SafeLoggingInterceptor(this.log);
-  final void Function(String message) log;
+  SafeLoggingInterceptor(NetworkConfig config) : _log = config.log;
+  final void Function(String message)? _log;
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    log('HTTP ${options.method}');
+    _log?.call('HTTP ${options.method}');
     handler.next(options);
   }
 
@@ -14,14 +17,16 @@ final class SafeLoggingInterceptor extends Interceptor {
     Response<dynamic> response,
     ResponseInterceptorHandler handler,
   ) {
-    log('HTTP ${response.statusCode}');
+    _log?.call('HTTP ${response.statusCode}');
     handler.next(response);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     // No URL, headers, bodies, tokens, passwords or exception details.
-    log('HTTP failure ${err.type.name} ${err.response?.statusCode ?? '-'}');
+    _log?.call(
+      'HTTP failure ${err.type.name} ${err.response?.statusCode ?? '-'}',
+    );
     handler.next(err);
   }
 }

@@ -1,4 +1,6 @@
-export 'src/cubit/login_cubit.dart';
+export 'src/bloc/login_bloc.dart';
+export 'src/di/auth_presentation_injection.module.dart';
+export 'src/events/login_event.dart';
 export 'src/inputs/email_input.dart';
 export 'src/inputs/input_error.dart';
 export 'src/inputs/password_input.dart';

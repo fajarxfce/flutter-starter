@@ -24,7 +24,7 @@ class _FluentStarterAppState extends State<FluentStarterApp> {
   @override
   void initState() {
     super.initState();
-    _router = widget.router ?? AppRouter(widget.services.repository);
+    _router = widget.router ?? widget.services.createRouter();
     _previous = widget.services.repository.currentUser;
     _subscription = widget.services.repository.sessionChanges.listen((user) {
       if (_previous != null && user == null) {

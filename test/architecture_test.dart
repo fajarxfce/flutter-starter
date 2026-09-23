@@ -70,4 +70,28 @@ void main() {
         .writeAsStringSync('class GeneratedView {}\nclass GeneratedState {}');
     expect(checkArchitecture(root), isEmpty);
   });
+  test('rejects Cubit implementations', () {
+    File(p.join(root.path, 'domain/lib/state.dart'))
+        .writeAsStringSync('class SessionCubit extends Cubit<int> {}');
+    expect(
+      checkArchitecture(root),
+      contains(contains('use Bloc with explicit events')),
+    );
+  });
+  test('rejects service locator access outside app composition', () {
+    File(p.join(root.path, 'domain/lib/locator.dart'))
+        .writeAsStringSync("import 'package:get_it/get_it.dart';");
+    expect(
+      checkArchitecture(root),
+      contains(contains('service locator belongs to app composition')),
+    );
+  });
+  test('keeps Injectable out of domain', () {
+    File(p.join(root.path, 'domain/lib/di.dart'))
+        .writeAsStringSync("import 'package:injectable/injectable.dart';");
+    expect(
+      checkArchitecture(root),
+      contains(contains('Injectable annotations are not allowed')),
+    );
+  });
 }
