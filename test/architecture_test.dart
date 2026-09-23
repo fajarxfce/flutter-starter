@@ -49,4 +49,25 @@ void main() {
     expect(checkArchitecture(root), contains(contains('forbidden dependency')));
     expect(checkArchitecture(root), contains(contains('cycle')));
   });
+  test('rejects implementations and imports in a package barrel', () {
+    File(p.join(root.path, 'domain/lib/auth_domain.dart')).writeAsStringSync(
+      "import 'package:core_common/core_common.dart';\nclass User {}",
+    );
+    expect(checkArchitecture(root), contains(contains('only exports')));
+  });
+  test('rejects unrelated public types in one implementation file', () {
+    File(p.join(root.path, 'domain/lib/models.dart')).writeAsStringSync(
+      'class User {}\nabstract interface class AuthRepository {}',
+    );
+    expect(checkArchitecture(root), contains(contains('split public types')));
+  });
+  test('accepts export barrels, private companions and generated types', () {
+    File(p.join(root.path, 'domain/lib/auth_domain.dart'))
+        .writeAsStringSync("export 'view.dart';");
+    File(p.join(root.path, 'domain/lib/view.dart'))
+        .writeAsStringSync('class View {}\nclass _ViewState {}');
+    File(p.join(root.path, 'domain/lib/view.g.dart'))
+        .writeAsStringSync('class GeneratedView {}\nclass GeneratedState {}');
+    expect(checkArchitecture(root), isEmpty);
+  });
 }

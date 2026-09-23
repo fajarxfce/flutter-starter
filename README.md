@@ -68,6 +68,39 @@ Domain has no Flutter, transport, persistence, JSON, or DI framework imports. Pr
 
 Use cases return `Success<T>` or `FailureResult<T>`. Data exceptions and DTOs never reach presentation. Freezed handles presentation state; JsonSerializable handles wire models. Domain models are plain Dart.
 
+### File organization
+
+Package entrypoints are export-only barrels. Each handwritten implementation file declares one public type, organized by responsibility:
+
+```text
+features/auth/domain/lib/
+  auth_domain.dart
+  src/entities/user.dart
+  src/repositories/auth_repository.dart
+  src/usecases/login.dart
+  src/usecases/logout.dart
+  src/usecases/restore_session.dart
+
+features/auth/data/lib/src/
+  dto/user_dto.dart
+  requests/login_request.dart
+  responses/login_response.dart
+  datasources/remote/auth_api.dart
+  datasources/demo/demo_adapter.dart
+  mappers/user_mapper.dart
+  repositories/remote_auth_repository.dart
+
+features/auth/presentation/lib/src/
+  inputs/{email_input,password_input,input_error}.dart
+  state/login_state.dart
+  cubit/login_cubit.dart
+  views/login_view.dart
+```
+
+Core packages follow the same convention: storage contracts and implementations, HTTP interceptors, failure mappers, theme, spacing tokens, widgets, and test fakes each have their own files. Home separates navigation from its overview and preferences widgets. App composition separates configuration enums, DI registration, service creation, inherited scope, router, guards, and pages.
+
+The architecture check enforces export-only package barrels and one public type per handwritten source file. A widget's private `State` may stay with its widget; generated files follow generator conventions. `Result`, `Success`, and `FailureResult` live in separate physical files connected with `part` so Dart's sealed hierarchy remains in one library. Keep each model's generated `part` next to that model; do not collect models or use cases in a barrel.
+
 ## Authentication and storage
 
 The demo adapter implements Dio's HTTP transport, so the example exercises Retrofit, checked JSON parsing, DTO mapping, repository, use case, Cubit, and UI. Its API contract is documented in [docs/backend.md](docs/backend.md).

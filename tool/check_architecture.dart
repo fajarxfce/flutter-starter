@@ -75,6 +75,41 @@ List<String> checkArchitecture(Directory root) {
         content: file.readAsStringSync(),
         throwIfDiagnostics: false,
       ).unit;
+      final relativePath = p.relative(file.path, from: lib.path);
+      final generated = RegExp(r'\.(g|gr|freezed|config)\.dart$')
+          .hasMatch(file.path);
+      if (relativePath == '$name.dart' &&
+          (unit.declarations.isNotEmpty ||
+              unit.directives.any(
+                (directive) =>
+                    directive is! ExportDirective &&
+                    directive is! LibraryDirective,
+              ))) {
+        errors.add('$name: package entrypoint must contain only exports');
+      }
+      if (!generated) {
+        final publicTypes = unit.declarations
+            .map(
+              (declaration) => switch (declaration) {
+                ClassDeclaration() => declaration.namePart.typeName.lexeme,
+                EnumDeclaration() => declaration.namePart.typeName.lexeme,
+                ExtensionTypeDeclaration() =>
+                  declaration.namePart.typeName.lexeme,
+                MixinDeclaration() => declaration.name.lexeme,
+                ExtensionDeclaration() => declaration.name?.lexeme,
+                _ => null,
+              },
+            )
+            .whereType<String>()
+            .where((name) => !name.startsWith('_'))
+            .toList();
+        if (publicTypes.length > 1) {
+          errors.add(
+            '$name/$relativePath: split public types into separate files: '
+            '${publicTypes.join(', ')}',
+          );
+        }
+      }
       final uris = <String>[];
       for (final directive in unit.directives) {
         if (directive is UriBasedDirective) {

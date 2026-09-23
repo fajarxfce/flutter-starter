@@ -2,6 +2,17 @@
 
 Validated on Linux on 2026-09-23 using Flutter 3.47.5 and Dart 3.13.4.
 
+## File organization refactor
+
+- `dart run melos run check --no-select`: passed, including format, analyzer, architecture rules, and 41 tests.
+- Package barrels and one-public-type-per-file rules include regression coverage.
+- JSON, Retrofit, Freezed, DI, and route code regenerated successfully; a second generation left all seven generated Dart files unchanged.
+- Web dev release build: passed after the refactor.
+
+The native build and integration results below describe the initial scaffold; native builds were not repeated for this source-organization refactor.
+
+## Initial scaffold
+
 - Workspace bootstrap with enforced root lockfile: passed; 10 workspace packages resolved.
 - `dart run melos run check --no-select`: passed, including format, architecture boundaries, analyzer, and 38 tests.
 - Build runner regeneration: passed; committed Dart generated files unchanged.
