@@ -5,7 +5,7 @@ import 'package:core_common/core_common.dart';
 import 'package:core_testing/core_testing.dart';
 import 'package:dio/dio.dart';
 import 'package:fluent_starter/config/app_config.dart';
-import 'package:fluent_starter/di/composition.dart';
+import 'package:fluent_starter/di/injection.dart';
 import 'package:fluent_starter/routing/app_router.dart';
 import 'package:fluent_starter/routing/guards/session_guard.dart';
 import 'package:flutter_test/flutter_test.dart';

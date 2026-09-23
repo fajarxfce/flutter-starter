@@ -1,9 +1,15 @@
+import 'package:core_common/core_common.dart';
 import 'package:core_network/src/config/network_config.dart';
 import 'package:core_network/src/interceptors/credential_interceptor.dart';
 import 'package:core_network/src/interceptors/safe_logging_interceptor.dart';
-import 'package:core_network/src/providers/dio_disposer.dart';
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
+
+@InjectableInit.microPackage(
+  ignoreUnregisteredTypes: [NetworkConfig, CredentialStore, HttpClientAdapter],
+  throwOnMissingDependencies: true,
+)
+void configureNetworkPackage() {}
 
 @module
 abstract class NetworkModule {
@@ -26,3 +32,5 @@ abstract class NetworkModule {
     ..httpClientAdapter = adapter
     ..interceptors.addAll([credentials, logging]);
 }
+
+void disposeDio(Dio dio) => dio.close(force: true);

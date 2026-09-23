@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:auth_data/src/datasources/remote/auth_remote_data_source.dart';
-import 'package:auth_data/src/di/auth_repository_disposer.dart';
+import 'package:auth_data/src/di/injection.dart';
 import 'package:auth_data/src/mappers/user_mapper.dart';
 import 'package:auth_data/src/requests/login_request.dart';
 import 'package:auth_data/src/responses/login_response.dart';

@@ -1,5 +1,5 @@
 export 'src/bloc/login_bloc.dart';
-export 'src/di/auth_presentation_injection.module.dart';
+export 'src/di/injection.module.dart';
 export 'src/events/login_event.dart';
 export 'src/inputs/email_input.dart';
 export 'src/inputs/input_error.dart';

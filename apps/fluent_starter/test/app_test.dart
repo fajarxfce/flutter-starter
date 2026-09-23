@@ -4,7 +4,7 @@ import 'package:auth_presentation/auth_presentation.dart';
 import 'package:core_testing/core_testing.dart';
 import 'package:fluent_starter/app.dart';
 import 'package:fluent_starter/config/app_config.dart';
-import 'package:fluent_starter/di/composition.dart';
+import 'package:fluent_starter/di/injection.dart';
 import 'package:fluent_starter/routing/app_router.dart';
 import 'package:fluent_starter/routing/app_router.gr.dart';
 import 'package:fluent_ui/fluent_ui.dart';

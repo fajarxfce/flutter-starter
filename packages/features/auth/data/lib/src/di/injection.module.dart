@@ -9,8 +9,7 @@ import 'dart:async' as _i687;
 import 'package:auth_data/src/datasources/remote/auth_api.dart' as _i42;
 import 'package:auth_data/src/datasources/remote/auth_remote_data_source.dart'
     as _i471;
-import 'package:auth_data/src/di/auth_api_module.dart' as _i128;
-import 'package:auth_data/src/di/auth_repository_disposer.dart' as _i227;
+import 'package:auth_data/src/di/injection.dart' as _i570;
 import 'package:auth_data/src/repositories/adapter_demo_session_repository.dart'
     as _i574;
 import 'package:auth_data/src/repositories/remote_auth_repository.dart'
@@ -24,13 +23,10 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
   // initializes the registration of main-scope dependencies inside of GetIt
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
-    final authApiModule = _$AuthApiModule();
     gh.lazySingleton<_i470.DemoSessionRepository>(
       () => _i574.AdapterDemoSessionRepository(gh<_i361.Dio>()),
     );
-    gh.lazySingleton<_i42.AuthApi>(
-      () => authApiModule.authApi(gh<_i361.Dio>()),
-    );
+    gh.lazySingleton<_i42.AuthApi>(() => _i42.AuthApi(gh<_i361.Dio>()));
     gh.lazySingleton<_i471.AuthRemoteDataSource>(
       () => _i471.AuthRemoteDataSource(gh<_i42.AuthApi>()),
     );
@@ -39,9 +35,7 @@ class AuthDataPackageModule extends _i526.MicroPackageModule {
         gh<_i471.AuthRemoteDataSource>(),
         gh<_i699.CredentialStore>(),
       ),
-      dispose: _i227.disposeAuthRepository,
+      dispose: _i570.disposeAuthRepository,
     );
   }
 }
-
-class _$AuthApiModule extends _i128.AuthApiModule {}
