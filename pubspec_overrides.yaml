@@ -1,6 +1,9 @@
 # Shared versions for this private workspace. Declare dependencies as any in pubspec.yaml.
 # Workspace packages resolve locally; Flutter packages retain their sdk: flutter declarations.
 dependency_overrides:
+  async: ^2.13.1
+  rxdart: ^0.28.0
+  synchronized: ^3.4.2
   analyzer: ^13.3.0
   auto_route: ^11.2.0
   auto_route_generator: ^10.6.0

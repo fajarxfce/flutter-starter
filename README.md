@@ -59,7 +59,7 @@ flowchart LR
   Network --> Common
 ```
 
-Domain has no Flutter, transport, persistence, JSON, or DI framework imports. Presentation Blocs depend on domain use cases through constructors. Injectable generates package modules for core/network, core/identity/data, auth/presentation, home/presentation, settings/data, and settings/presentation; the app composes them in an isolated GetIt container. GetIt access stays in DI, bootstrap, and route composition. Route pages bind presentation state and events to feature widgets; features do not import each other. Auth and home consume the shared identity domain. Identity data owns the session; every observer receives its current snapshot followed by changes. Loading and feedback belong to the Bloc performing an action, and no feature consumes another feature's Bloc.
+Domain has no Flutter, transport, persistence, JSON, or DI framework imports. Presentation Blocs depend on domain use cases through constructors. Injectable generates package modules for core/network, core/identity/data, auth/presentation, home/presentation, settings/data, and settings/presentation; the app composes them in an isolated GetIt container. GetIt access stays in DI, bootstrap, and route composition. Route pages bind presentation state and events to feature widgets; features do not import each other. Auth and home consume the shared identity domain. The identity data session component owns the session; every observer receives its current snapshot followed by changes. Loading and feedback belong to the Bloc performing an action, and no feature consumes another feature's Bloc.
 
 `tool/check_architecture.dart` checks package dependencies, production imports/exports (including conditional ones), forbidden framework dependencies, private cross-package imports, directory escapes, and cycles. It uses the Dart analyzer AST, not text matching. Generated files are checked too. The allowlist requires an explicit decision when adding a package.
 
@@ -100,8 +100,8 @@ core/identity/data/lib/
   src/requests/login_request.dart
   src/responses/login_response.dart
   src/models/auth_session.dart
-  src/datasources/local/auth_local_data_source.dart
-  src/datasources/remote/auth_api.dart
+  src/session/identity_session.dart
+  src/session/persistent_identity_session.dart
   src/datasources/remote/auth_remote_data_source.dart
   src/datasources/demo/demo_adapter.dart
   src/mappers/user_mapper.dart
@@ -167,8 +167,8 @@ Adding a use case to an existing feature changes that feature's bindings and gen
 
 | Owner | Injectable registrations |
 |---|---|
-| Core network `lib/di/injection.dart` | Lazy singleton `Dio` and credential interceptor, both qualified with `mainApi` |
-| Identity data `lib/di/injection.dart` and annotated classes/factory | Shared `LoginWithProvider` for authorization admission; factory `Login`, `GetIdentityProviders`, `RestoreSession`, `Logout`, `WatchSession`, `GetCurrentSession`, and `ExpireDemoSession`; lazy singleton API, local/remote data sources, and repository implementations |
+| Core network `lib/di/injection.dart` | Lazy singleton `Dio` and auth interceptor, both qualified with `mainApi` |
+| Identity data `lib/di/injection.dart` and annotated classes/factory | Shared `LoginWithProvider` for authorization admission; factory `Login`, `GetIdentityProviders`, `RestoreSession`, `Logout`, `WatchSession`, `GetCurrentSession`, and `ExpireDemoSession`; lazy singleton datasource contracts, session owner, and repository implementations |
 | Auth presentation | Factory `LoginBloc` and shared `AuthRouter` configuration |
 | Home presentation | Factory `HomeBloc` receiving identity use cases and shared `HomeRouter` configuration |
 | Settings data `lib/di/injection.dart` and annotated repository | Factory `LoadTheme` and `SaveTheme`; `LocalSettingsRepository` bound as `SettingsRepository` |
@@ -176,22 +176,22 @@ Adding a use case to an existing feature changes that feature's bindings and gen
 | App `lib/di/injection.dart` | `AppEnvironment`; `mainApi` bindings for `BaseOptions`, safe logging interceptor, and `HttpClientAdapter` (demo or platform transport) |
 | App routing | Shared `AppRouter` and `SessionGuard` consuming identity session use cases |
 
-The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named credential and logging interceptors. Authentication headers are restricted to the API origin and omitted from login requests. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, local session data source, and Dio transport when the container is reset. The local data source drains pending credential operations before closing its session stream.
+The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named auth and logging interceptors. Authentication headers are restricted to the API origin. Endpoints marked `@Extra({'authenticated': false})`, including password login and OAuth exchange, bypass authentication. Protected requests without credentials fail locally; a protected HTTP 401 expires only the session used by that request. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, identity session owner, and Dio transport when the container is reset. The session owner waits for pending credential writes and cleanup before closing its stream.
 
-`AuthApi` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. `@Named(mainApi)` selects its Dio instance. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module. The demo-session repository selects the same named client.
+`AuthRemoteDataSource` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. `@Named(mainApi)` selects its Dio instance. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module. The demo-session repository selects the same named client.
 
 Each client owns its `BaseOptions`, adapter, and interceptor instances. There is no `NetworkConfig` wrapper or unqualified Dio registration. The starter configures one backend client. To add another backend:
 
 1. Add its qualifier beside `mainApi` in core/network's `di/network_clients.dart`.
 2. Supply that client's named `BaseOptions`, adapter, and logging binding in the existing app `injection.dart`.
-3. Add its named Dio provider in the existing `NetworkModule`, with `@LazySingleton(dispose: disposeDio)`. Select credentials and interceptors for that backend; `CredentialInterceptor` accepts a store and the client's base URL, while `SafeLoggingInterceptor` accepts a logging callback. Their constructors have no fixed client qualifier, so each provider can create separate instances.
+3. Add its named Dio provider in the existing `NetworkModule`, with `@LazySingleton(dispose: disposeDio)`. Select credentials and interceptors for that backend; `AuthInterceptor` accepts an `HttpAuthentication` contract and the client's base URL, while `SafeLoggingInterceptor` accepts a logging callback. Their constructors have no fixed client qualifier, so each provider can create separate instances.
 4. Select the qualifier on that backend's Retrofit constructor and regenerate. Feature domain, repositories' error boundaries, and `safeApiCall` need no client-specific configuration.
 
 Qualify provider parameters as well as return registrations. Tests exercise two clients with separate URLs, timeouts, credentials, logs, and disposal. Auth DI tests include unrelated named and unnamed clients to verify that generated factories select `mainApi`.
 
 ### Safe API and storage boundaries
 
-`safeApiCall` is a public function that executes a request once and converts exceptions into `FailureResult<T>`. Success returns `Success<T>`. It has no DI registration, client configuration, or reporting callback. Repositories call it directly; the Dio instance is already selected by the data source inside the closure.
+`safeApiCall` is a public function that executes a request once and converts exceptions into `FailureResult<T>`. Success returns `Success<T>`. It has no DI registration, client configuration, or reporting callback. Data-layer operations call it directly or through `networkBoundResource`; the Dio instance is already selected by the data source inside the closure.
 
 The normal callback takes no arguments:
 
@@ -218,7 +218,7 @@ HTTP 400/422 map to validation, 401 to unauthorized, 403 to forbidden, 404 to no
 
 Nested Dio errors and explicit infrastructure failures are inspected safely. On native platforms, socket/DNS, HTTP I/O and OS errors map to `network`; TLS/handshake/certificate errors map to `security`. Browser connection failures use Dio's `connectionError` type; conditional imports keep native APIs out of web builds. `FormatException`, checked JSON errors and mapping type errors become `invalidResponse`; genuinely unknown causes retain the `unexpected` fallback. Failure messages do not copy raw exception text or server bodies.
 
-Storage uses the pure Dart `safeStorageCall` helper from core/common, with an optional user-facing message. It preserves `FailureKind.storage` for keychain/preferences failures. `Result.flatMap` continues successful steps and skips subsequent work after a failure; each I/O step uses its corresponding safe boundary. Auth and settings repositories contain no `try/catch` blocks. Auth delegates persistence, session revisions, and notifications to its local data source.
+Storage uses the pure Dart `safeStorageCall` helper from core/common, with an optional user-facing message. It preserves `FailureKind.storage` for keychain/preferences failures. `Result.flatMap` continues successful steps and skips subsequent work after a failure; each I/O step uses its corresponding safe boundary. Auth and settings repositories contain no `try/catch` blocks. Identity delegates session lifecycle and persistence consistency to `IdentitySession`. The storage datasource contract remains `CredentialStore`; it only reads, writes and deletes credentials.
 
 Cancellation belongs to the Dio/Retrofit request. When needed, pass a token inside the closure; Dio emits a cancellation exception that the function maps to `FailureKind.cancelled`:
 
@@ -234,20 +234,20 @@ The helper performs no retries, backoff, cancellation scheduling, logging, or te
 
 `networkBoundResource<Remote, T>` is the fetch-and-commit form of a network-bound resource. `fetch` runs through `safeApiCall`, including DTO validation/mapping. Only successful remote data reaches `save`, which returns a typed `Result<T>` from the local source of truth. A storage failure remains a storage failure, and success is returned only after the local commit completes. This function has no cache-first emission, automatic retry, or DI registration.
 
-Auth's login implementation declares the two stages:
+The repository selects the datasource call and maps its response:
 
 ```dart
-final revision = _local.beginLogin();
 final request = LoginRequest(email: email, password: password);
-return networkBoundResource(
-  fetch: () async => (await _remote.login(request)).toSession(),
-  save: (session) => _local.saveSession(session, revision: revision),
+return _session.authenticate(
+  () async => (await _remote.login(request)).toSession(),
 );
 ```
 
-`AuthSessionMapper` validates the token and produces an explicit `AuthSession` model containing the token and mapped user. `AuthLocalDataSource` owns secure-storage access, the current user, session notifications, and revision checks. Repository methods select the request and auth policy; they contain no mutable session state, stream controllers, rollback helpers, or direct credential access. Session restoration uses the same resource function and explicitly invalidates only the current session after a 401.
+`IdentitySession` owns a complete session operation. Its implementation uses `networkBoundResource` to commit only validated responses, `CancelableOperation` to discard superseded results, `Lock` to order credential writes/cleanup, and `BehaviorSubject` to replay the current session to observers. These are internal data-layer mechanisms; the repository has no operation IDs, counters, credential checks or HTTP status handling. Provider availability and admission policy stay in domain use cases.
 
-Local credential operations execute in order. A cancelled login's rollback finishes before a newer login writes its token. Logout clears the in-memory session immediately; its future completes after queued credential cleanup succeeds or reports a storage failure. Disposal also waits for in-flight cleanup. The local data source is a feature-owned Injectable lazy singleton with an annotated disposal method; the repository receives it through constructor injection.
+`CredentialStore` is the local datasource contract; `AuthRemoteDataSource` is the abstract Retrofit datasource with a generated implementation. `OAuthRemoteDataSource` has a separate browser implementation. Neither datasource owns runtime session state. There is no forwarding wrapper around another identical HTTP API.
+
+`AuthInterceptor` consumes `HttpAuthentication`, supplied by the same session owner used by the repository. Network does not import identity or presentation. The session owner has no Dio dependency, so this wiring cannot recurse through the HTTP client. Logout publishes a signed-out state immediately and waits for credential cleanup. A cancelled write's cleanup completes under the same lock before any newer write can commit. See [session boundaries and concurrency](docs/identity-session.md).
 
 ### Generated navigation
 

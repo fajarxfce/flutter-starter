@@ -5,6 +5,8 @@ import 'package:identity_data/src/config/oauth_configuration.dart';
 import 'package:identity_data/src/datasources/demo/demo_oauth_browser.dart';
 import 'package:identity_data/src/oauth/oauth_browser.dart';
 import 'package:identity_data/src/oauth/system_oauth_browser.dart';
+import 'package:identity_data/src/session/identity_session.dart';
+import 'package:identity_data/src/session/persistent_identity_session.dart';
 import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 
@@ -22,6 +24,14 @@ void configureIdentityDataPackage() {}
 /// Identity owns its use-case bindings while domain stays free of DI annotations.
 @module
 abstract class IdentityModule {
+  @lazySingleton
+  IdentitySession identitySession(PersistentIdentitySession session) => session;
+
+  @Named(mainApi)
+  @lazySingleton
+  HttpAuthentication httpAuthentication(PersistentIdentitySession session) =>
+      session;
+
   @lazySingleton
   OAuthBrowser oauthBrowser(
     AppEnvironment environment,

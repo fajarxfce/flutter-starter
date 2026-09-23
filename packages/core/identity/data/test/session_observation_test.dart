@@ -10,7 +10,7 @@ void main() {
   test(
     'new observers receive the current session, then ordered changes',
     () async {
-      final local = AuthLocalDataSource(FakeCredentialStore());
+      final local = PersistentIdentitySession(FakeCredentialStore());
       addTearDown(local.dispose);
       final first = expectLater(
         local.sessionChanges,
@@ -20,10 +20,10 @@ void main() {
           isA<SessionUnauthenticated>(),
         ]),
       );
-      await local.saveSession(saved, revision: local.beginLogin());
+      await local.authenticate(() async => saved);
       final late = await local.sessionChanges.first;
       expect(late.user, same(user));
-      await local.clearSession();
+      await local.logout();
       await first;
       expect(await local.sessionChanges.first, isA<SessionUnauthenticated>());
     },
@@ -32,7 +32,7 @@ void main() {
   test(
     'observers have independent lifetimes and disposal closes the stream',
     () async {
-      final local = AuthLocalDataSource(FakeCredentialStore());
+      final local = PersistentIdentitySession(FakeCredentialStore());
       final disposable = local.sessionChanges.listen((_) {});
       await disposable.cancel();
       final remaining = expectLater(
@@ -43,7 +43,7 @@ void main() {
           emitsDone,
         ]),
       );
-      await local.saveSession(saved, revision: local.beginLogin());
+      await local.authenticate(() async => saved);
       await local.dispose();
       await remaining;
       await expectLater(local.sessionChanges, emitsDone);
@@ -53,9 +53,11 @@ void main() {
   test(
     'restoring without a stored token publishes a signed-out snapshot',
     () async {
-      final local = AuthLocalDataSource(FakeCredentialStore());
+      final local = PersistentIdentitySession(FakeCredentialStore());
       addTearDown(local.dispose);
-      await local.hasToken(revision: local.revision);
+      await local.restore(
+        () => throw StateError('No lookup without credentials'),
+      );
       expect(local.session, isA<SessionUnauthenticated>());
       expect(await local.sessionChanges.first, same(local.session));
     },

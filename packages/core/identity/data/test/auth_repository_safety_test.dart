@@ -139,6 +139,36 @@ void main() {
     expect(stored, 'demo-access-token');
   });
 
+  test('401 on any protected endpoint expires the session without a restore use case', () async {
+    final credentials = FakeCredentialStore();
+    final fixture = await _create(credentials);
+    await _login(fixture.repository);
+    fixture.adapter.expireSession = true;
+    final result = await safeApiCall(() => fixture.dio.get<Object>('/auth/me'));
+    expect(
+      (result as FailureResult<Response<Object>>).failure.kind,
+      FailureKind.unauthorized,
+    );
+    expect(fixture.repository.session, isA<SessionUnauthenticated>());
+    expect(credentials.token, isNull);
+  });
+
+  test('public login failure leaves the existing session intact', () async {
+    final credentials = FakeCredentialStore();
+    final fixture = await _create(credentials);
+    await _login(fixture.repository);
+    final result = await fixture.repository.login(
+      email: 'demo@example.com',
+      password: 'incorrect',
+    );
+    expect(
+      (result as FailureResult<User>).failure.kind,
+      FailureKind.unauthorized,
+    );
+    expect(fixture.repository.session, isA<SessionAuthenticated>());
+    expect(credentials.token, 'demo-access-token');
+  });
+
   test('transient session failures preserve credentials for retry', () async {
     final credentials = FakeCredentialStore();
     final fixture = await _create(credentials);
@@ -161,7 +191,7 @@ void main() {
     expect(fixture.repository.session.user, isNotNull);
   });
 
-  test('a stale 401 cannot clear a newer login', () async {
+  test("a protected request's stale 401 cannot clear a newer login with the same token text", () async {
     final credentials = FakeCredentialStore();
     final fixture = await _create(credentials);
     await _login(fixture.repository);
@@ -172,7 +202,7 @@ void main() {
     fixture.dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (options.path == '/auth/me') {
+          if (options.path == '/private/profile') {
             held.complete((options: options, handler: handler));
           } else {
             handler.next(options);
@@ -180,7 +210,9 @@ void main() {
         },
       ),
     );
-    final pending = fixture.repository.restoreSession();
+    final pending = safeApiCall(
+      () => fixture.dio.get<Object>('/private/profile'),
+    );
     final request = await held.future;
     expect(await _login(fixture.repository), isA<Success<User>>());
     request.handler.reject(
@@ -192,9 +224,10 @@ void main() {
           statusCode: 401,
         ),
       ),
+      true,
     );
     expect(
-      ((await pending) as FailureResult<User?>).failure.kind,
+      ((await pending) as FailureResult<Response<Object>>).failure.kind,
       FailureKind.unauthorized,
     );
     expect(credentials.token, 'demo-access-token');

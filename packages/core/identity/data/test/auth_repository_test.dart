@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:identity_data/identity_data.dart';
 import 'package:identity_data/src/datasources/demo/demo_oauth_browser.dart';
+import 'package:identity_data/src/datasources/remote/browser_oauth_remote_data_source.dart';
 import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart' show GetItHelper;
 import 'package:test/test.dart';
@@ -14,11 +15,15 @@ void main() {
   late DemoAdapter adapter;
   late Dio dio;
   late RemoteIdentityRepository repository;
-  late AuthLocalDataSource local;
+  late PersistentIdentitySession local;
   final containers = <GetIt>[];
   Future<Dio> createClient({void Function(String)? log}) async {
     final container = GetIt.asNewInstance();
     containers.add(container);
+    container.registerSingleton<HttpAuthentication>(
+      local,
+      instanceName: mainApi,
+    );
     container.registerSingleton(
       BaseOptions(baseUrl: 'https://demo.invalid'),
       instanceName: mainApi,
@@ -39,13 +44,13 @@ void main() {
   setUp(() async {
     store = FakeCredentialStore();
     adapter = DemoAdapter(latency: Duration.zero);
+    local = PersistentIdentitySession(store);
     dio = await createClient();
-    local = AuthLocalDataSource(store);
     repository = RemoteIdentityRepository(
-      AuthRemoteDataSource(AuthApi(dio)),
+      AuthRemoteDataSource(dio),
       local,
-      OAuthRemoteDataSource(
-        AuthApi(dio),
+      BrowserOAuthRemoteDataSource(
+        AuthRemoteDataSource(dio),
         DemoOAuthBrowser(dio),
         OAuthConfiguration(apiOrigin: Uri.parse('https://demo.invalid')),
       ),
@@ -136,12 +141,12 @@ void main() {
     final logs = <String>[];
     dio.close();
     dio = await createClient(log: logs.add);
-    final api = AuthApi(dio);
+    final api = AuthRemoteDataSource(dio);
     await api.login(
       const LoginRequest(email: 'demo@example.com', password: 'Demo123!'),
     );
     store.token = 'demo-access-token';
-    await api.me();
+    await api.currentUser();
     expect(logs.join(), isNot(contains('Demo123!')));
     expect(logs.join(), isNot(contains('demo-access-token')));
     expect(logs.join(), isNot(contains('demo@example.com')));

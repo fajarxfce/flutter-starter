@@ -19,7 +19,7 @@ const _second = AuthSession(
 
 void main() {
   late _MockCredentials credentials;
-  late AuthLocalDataSource local;
+  late PersistentIdentitySession local;
   late Completer<void> writing;
   late Completer<void> releaseWrite;
   late List<String> writes;
@@ -27,7 +27,7 @@ void main() {
 
   setUp(() {
     credentials = _MockCredentials();
-    local = AuthLocalDataSource(credentials);
+    local = PersistentIdentitySession(credentials);
     writing = Completer<void>();
     releaseWrite = Completer<void>();
     writes = [];
@@ -56,12 +56,12 @@ void main() {
         .map((session) => session.user)
         .listen(published.add);
     addTearDown(subscription.cancel);
-    final first = local.saveSession(_first, revision: local.beginLogin());
+    final first = local.authenticate(() async => _first);
     await writing.future;
-    final second = local.saveSession(_second, revision: local.beginLogin());
+    final second = local.authenticate(() async => _second);
     await Future<void>.delayed(Duration.zero);
     expect(writes, ['first-token']);
-    expect(local.currentUser, isNull);
+    expect(local.session.user, isNull);
     releaseWrite.complete();
     expect(
       (await first as FailureResult<User>).failure.kind,
@@ -71,35 +71,32 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(published, [_second.user]);
     expect(token, 'second-token');
-    expect(local.currentUser, same(_second.user));
+    expect(local.session.user, same(_second.user));
   });
 
   test(
     'queued logout clears the old token before a newer login writes',
     () async {
-      final first = local.saveSession(_first, revision: local.beginLogin());
+      final first = local.authenticate(() async => _first);
       await writing.future;
-      final logout = local.clearSession();
-      final second = local.saveSession(_second, revision: local.beginLogin());
+      final logout = local.logout();
+      final second = local.authenticate(() async => _second);
       releaseWrite.complete();
       expect(await first, isA<FailureResult<User>>());
       expect(await logout, isA<Success<void>>());
       expect(await second, isA<Success<User>>());
       expect(token, 'second-token');
-      expect(local.currentUser, same(_second.user));
+      expect(local.session.user, same(_second.user));
     },
   );
 
   test('a storage failure does not block subsequent session commits', () async {
     when(() => credentials.write(_first.accessToken))
         .thenThrow(StateError('locked'));
-    final first = await local.saveSession(_first, revision: local.beginLogin());
+    final first = await local.authenticate(() async => _first);
     expect((first as FailureResult<User>).failure.kind, FailureKind.storage);
-    expect(local.currentUser, isNull);
-    final second = await local.saveSession(
-      _second,
-      revision: local.beginLogin(),
-    );
+    expect(local.session.user, isNull);
+    final second = await local.authenticate(() async => _second);
     expect(second, isA<Success<User>>());
     expect(token, 'second-token');
   });
@@ -107,7 +104,7 @@ void main() {
   test(
     'disposal waits for pending rollback and closes session notifications',
     () async {
-      final first = local.saveSession(_first, revision: local.beginLogin());
+      final first = local.authenticate(() async => _first);
       await writing.future;
       final notifications = expectLater(
         local.sessionChanges.skip(1).map((session) => session.user),
@@ -125,7 +122,66 @@ void main() {
       await closing;
       await notifications;
       expect(token, isNull);
-      expect(local.currentUser, isNull);
+      expect(local.session.user, isNull);
     },
   );
+  test('a successful new login supersedes a pending restore', () async {
+    token = 'old-token';
+    final started = Completer<void>();
+    final response = Completer<User>();
+    final restore = local.restore(() {
+      started.complete();
+      return response.future;
+    });
+    await started.future;
+    await local.authenticate(() async => _second);
+    expect(
+      ((await restore) as FailureResult<User?>).failure.kind,
+      FailureKind.cancelled,
+    );
+    response.complete(_first.user);
+    await Future<void>.delayed(Duration.zero);
+    expect(local.session.user, same(_second.user));
+    expect(token, _second.accessToken);
+  });
+
+  test(
+    'logout remains effective in memory when credential deletion fails',
+    () async {
+      await local.authenticate(() async => _second);
+      when(credentials.clear).thenThrow(StateError('locked'));
+      final result = await local.logout();
+      expect((result as FailureResult<void>).failure.kind, FailureKind.storage);
+      expect(local.session, isA<SessionUnauthenticated>());
+      expect(await local.readCredentials(), isNull);
+      expect(
+        await local.restore(() => throw StateError('must not call server')),
+        isA<Success<User?>>(),
+      );
+      expect(local.session, isA<SessionUnauthenticated>());
+    },
+  );
+
+  test(
+    'missing credentials from an older request cannot expire a new session',
+    () async {
+      expect(await local.readCredentials(), isNull);
+      await local.authenticate(() async => _second);
+      await local.rejectCredentials(null);
+      expect(local.session.user, same(_second.user));
+      expect(token, _second.accessToken);
+    },
+  );
+
+  test('reading credentials does not publish a session transition', () async {
+    final states = <Session>[];
+    final subscription = local.sessionChanges.listen(states.add);
+    addTearDown(subscription.cancel);
+    token = _second.accessToken;
+    expect((await local.readCredentials())?.token, token);
+    token = null;
+    expect(await local.readCredentials(), isNull);
+    await Future<void>.delayed(Duration.zero);
+    expect(states, [isA<SessionUninitialized>()]);
+  });
 }

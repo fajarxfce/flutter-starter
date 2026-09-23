@@ -2,6 +2,17 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Identity session and datasource boundaries
+
+- Removed the stateful `AuthLocalDataSource`. Local credential I/O uses the existing `CredentialStore` contract and platform implementations. `AuthRemoteDataSource` is the generated Retrofit contract; browser OAuth has a separate contract and implementation.
+- Repositories select datasource operations, map DTOs and delegate session operations. `PersistentIdentitySession` owns observation, restoration, credential commits and logout. `BehaviorSubject`, `CancelableOperation` and `Lock` replace the handwritten replay stream, public revision protocol and write queue. Provider availability/admission remains in the domain use case.
+- The named `AuthInterceptor` reads credentials through `HttpAuthentication`, rejects protected requests with missing credentials, and reports protected HTTP `401` responses to the session owner. Public requests and other origins cannot expire the session. The identity micro-package binds both session and HTTP contracts to the same storage-backed instance without a Dio/repository dependency cycle.
+- The full workspace quality gate passed formatting, centralized dependency policy, architecture boundaries, analyzer and **191 tests**. Regressions cover concurrent writes, superseded restores, logout/disposal during persistence, failed cleanup, provider admission while a cancelled browser attempt is still open, protected versus public `401`, and an old request's `401` arriving after a newer login with identical token text.
+- Regeneration passed in dependency order; all **19 generated Dart files** retained identical hashes. Injectable and Retrofit output is committed alongside the source contracts.
+- Linux native integration passed all **three** methods (password, Google demo, GitHub demo), including secure-store restoration through a fresh DI container and logout. The web release build passed, including Flutter's Wasm dry run.
+
+No refresh-token backend contract exists: a protected `401` expires the current session without attempting refresh or replay. OAuth providers remain simulated until a backend is configured. Android and Apple/Windows native builds were not repeated for this refactor.
+
 ## Provider sign-in
 
 - Added Google/GitHub support through a system-browser OAuth broker contract: random state, S256 PKCE, strict callback validation, a Retrofit application-code exchange, and the same session persistence used by password login. Live API providers require explicit configuration; no OAuth backend or provider credentials are included. `docs/oauth.md` specifies the backend and platform setup.

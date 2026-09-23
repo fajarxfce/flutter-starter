@@ -34,7 +34,7 @@ configuration. The included providers are simulated in demo mode.
 {"id":"demo-user","email":"demo@example.com","display_name":"Alex Morgan"}
 ```
 
-Expired or revoked sessions return `401`. Successful verification updates the current user; a `401` clears local credentials and signs the user out. Timeouts and transport/server errors preserve credentials for retry. Generic failure messages are displayed; raw response bodies are not surfaced or logged.
+Expired or revoked sessions return `401`. Successful verification updates the current user. The auth interceptor handles `401` from any authenticated endpoint by invalidating the credential used by that request; an old response cannot clear a newer session. Public password/OAuth endpoints do not trigger invalidation. Timeouts and transport/server errors preserve credentials for retry. Generic failure messages are displayed; raw response bodies are not surfaced or logged.
 
 Logout clears local credentials. There is no remote revocation endpoint or refresh-token contract in this starter. Add both explicitly in domain/data when supported by your service. Password validation only enforces nonempty/minimum-eight-character input for this demo; adapt it to your backend's login policy.
 
@@ -42,4 +42,4 @@ Logout clears local credentials. There is no remote revocation endpoint or refre
 
 `DemoAdapter` returns this same wire format without network access. `demo@example.com` + `Demo123!` signs in; `timeout@example.com` simulates timeout and `server@example.com` simulates `503`. Other credentials return `401`. The home-screen expiry button makes the next `/auth/me` return `401`.
 
-Inject a different `HttpClientAdapter` qualified with `mainApi`, or replace `CredentialStore`, in tests. Standalone network-module tests also provide `mainApi` bindings for `BaseOptions` and `SafeLoggingInterceptor`. Repository tests verify JSON decoding, mappings, storage failures, session expiry, and login/logout races; presentation tests verify user-facing state and duplicate-submit protection.
+Inject a different `HttpClientAdapter` qualified with `mainApi`, or replace `CredentialStore`, in tests. Standalone network-module tests provide `mainApi` bindings for `BaseOptions`, `SafeLoggingInterceptor`, and `HttpAuthentication`. Repository tests verify JSON decoding, mappings, storage failures, session expiry, and login/logout races; presentation tests verify user-facing state and duplicate-submit protection.

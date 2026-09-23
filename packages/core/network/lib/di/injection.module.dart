@@ -6,10 +6,10 @@
 
 import 'dart:async' as _i687;
 
-import 'package:core_common/core_common.dart' as _i699;
 import 'package:core_network/di/injection.dart' as _i278;
-import 'package:core_network/src/interceptors/credential_interceptor.dart'
+import 'package:core_network/src/authentication/http_authentication.dart'
     as _i155;
+import 'package:core_network/src/interceptors/auth_interceptor.dart' as _i267;
 import 'package:core_network/src/interceptors/safe_logging_interceptor.dart'
     as _i231;
 import 'package:dio/dio.dart' as _i361;
@@ -20,9 +20,9 @@ class CoreNetworkPackageModule extends _i526.MicroPackageModule {
   @override
   _i687.FutureOr<void> init(_i526.GetItHelper gh) {
     final networkModule = _$NetworkModule();
-    gh.lazySingleton<_i155.CredentialInterceptor>(
-      () => networkModule.mainApiCredentials(
-        gh<_i699.CredentialStore>(),
+    gh.lazySingleton<_i267.AuthInterceptor>(
+      () => networkModule.mainApiAuthentication(
+        gh<_i155.HttpAuthentication>(instanceName: 'mainApi'),
         gh<_i361.BaseOptions>(instanceName: 'mainApi'),
       ),
       instanceName: 'mainApi',
@@ -31,7 +31,7 @@ class CoreNetworkPackageModule extends _i526.MicroPackageModule {
       () => networkModule.mainApiDio(
         gh<_i361.BaseOptions>(instanceName: 'mainApi'),
         gh<_i361.HttpClientAdapter>(instanceName: 'mainApi'),
-        gh<_i155.CredentialInterceptor>(instanceName: 'mainApi'),
+        gh<_i267.AuthInterceptor>(instanceName: 'mainApi'),
         gh<_i231.SafeLoggingInterceptor>(instanceName: 'mainApi'),
       ),
       instanceName: 'mainApi',

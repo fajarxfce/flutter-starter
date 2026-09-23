@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'auth_api.dart';
+part of 'auth_remote_data_source.dart';
 
 // dart format off
 
@@ -11,8 +11,8 @@ part of 'auth_api.dart';
 // ignore_for_file: type=lint
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter,avoid_unused_constructor_parameters,unreachable_from_main,avoid_redundant_argument_values
 
-class _AuthApi implements AuthApi {
-  _AuthApi(this._dio, {this.baseUrl, this.errorLogger});
+class _AuthRemoteDataSource implements AuthRemoteDataSource {
+  _AuthRemoteDataSource(this._dio, {this.baseUrl, this.errorLogger});
 
   final Dio _dio;
 
@@ -54,7 +54,7 @@ class _AuthApi implements AuthApi {
   }
 
   @override
-  Future<UserDto> me({CancelToken? cancelToken}) async {
+  Future<UserDto> currentUser({CancelToken? cancelToken}) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);

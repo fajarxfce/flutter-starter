@@ -2,11 +2,12 @@ import 'dart:typed_data';
 
 import 'package:core_common/core_common.dart';
 import 'package:core_network/core_network.dart';
-import 'package:core_testing/core_testing.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart' show GetItHelper;
 import 'package:test/test.dart';
+
+import 'support/fake_http_authentication.dart';
 
 class _RecordingAdapter implements HttpClientAdapter {
   final requests = <RequestOptions>[];
@@ -60,8 +61,9 @@ void main() {
       SafeLoggingInterceptor(logs.add),
       instanceName: mainApi,
     );
-    container.registerSingleton<CredentialStore>(
-      FakeCredentialStore()..token = 'private-token',
+    container.registerSingleton<HttpAuthentication>(
+      FakeHttpAuthentication('private-token'),
+      instanceName: mainApi,
     );
     container.registerSingleton<HttpClientAdapter>(
       adapter,
@@ -87,12 +89,18 @@ void main() {
   test('credentials are attached only to authenticated API requests', () async {
     final dio = container<Dio>(instanceName: mainApi);
     await dio.get<Object>('/auth/me');
-    await dio.post<Object>('/auth/login');
+    await dio.post<Object>(
+      '/auth/login',
+      options: Options(extra: {'authenticated': false}),
+    );
     await dio.post<Object>(
       '/auth/oauth/google/exchange',
       options: Options(extra: {'authenticated': false}),
     );
-    await dio.post<Object>('https://api.example.com/auth/login?source=test');
+    await dio.post<Object>(
+      'https://api.example.com/auth/login?source=test',
+      options: Options(extra: {'authenticated': false}),
+    );
     await dio.get<Object>('https://other.example.com/auth/me');
     await dio.get<Object>('https://api.example.com:8443/auth/me');
     expect(
@@ -136,8 +144,8 @@ void main() {
       final uploadClient = Dio(uploadOptions)
         ..httpClientAdapter = uploadAdapter
         ..interceptors.addAll([
-          CredentialInterceptor(
-            FakeCredentialStore()..token = 'upload-token',
+          AuthInterceptor(
+            FakeHttpAuthentication('upload-token'),
             baseUrl: uploadOptions.baseUrl,
           ),
           SafeLoggingInterceptor(uploadLogs.add),

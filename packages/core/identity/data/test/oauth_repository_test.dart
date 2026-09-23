@@ -6,6 +6,7 @@ import 'package:core_testing/core_testing.dart';
 import 'package:dio/dio.dart';
 import 'package:identity_data/identity_data.dart';
 import 'package:identity_data/src/datasources/demo/demo_oauth_browser.dart';
+import 'package:identity_data/src/datasources/remote/browser_oauth_remote_data_source.dart';
 import 'package:identity_data/src/oauth/oauth_attempt.dart';
 import 'package:identity_domain/identity_domain.dart';
 import 'package:test/test.dart';
@@ -15,19 +16,20 @@ import 'support/callback_oauth_browser.dart';
 void main() {
   late FakeCredentialStore credentials;
   late Dio dio;
-  late AuthLocalDataSource local;
+  late PersistentIdentitySession local;
   late DemoOAuthBrowser browser;
   late OAuthConfiguration config;
   late List<RequestOptions> requests;
   late List<String> logs;
   setUp(() {
     credentials = FakeCredentialStore();
+    local = PersistentIdentitySession(credentials);
     requests = [];
     logs = [];
     dio = Dio(BaseOptions(baseUrl: 'https://demo.invalid'))
       ..httpClientAdapter = DemoAdapter(latency: Duration.zero)
       ..interceptors.add(
-        CredentialInterceptor(credentials, baseUrl: 'https://demo.invalid'),
+        AuthInterceptor(local, baseUrl: 'https://demo.invalid'),
       )
       ..interceptors.add(SafeLoggingInterceptor(logs.add))
       ..interceptors.add(
@@ -38,7 +40,6 @@ void main() {
           },
         ),
       );
-    local = AuthLocalDataSource(credentials);
     browser = DemoOAuthBrowser(dio);
     config = OAuthConfiguration(
       apiOrigin: Uri.parse('https://demo.invalid'),
@@ -54,10 +55,10 @@ void main() {
     OAuthBrowser? overrideBrowser,
     OAuthConfiguration? configuration,
   }) => RemoteIdentityRepository(
-    AuthRemoteDataSource(AuthApi(dio)),
+    AuthRemoteDataSource(dio),
     local,
-    OAuthRemoteDataSource(
-      AuthApi(dio),
+    BrowserOAuthRemoteDataSource(
+      AuthRemoteDataSource(dio),
       overrideBrowser ?? browser,
       configuration ?? config,
     ),
@@ -83,13 +84,24 @@ void main() {
         expect(logs.join(), isNot(contains('code_verifier')));
         expect(logs.join(), isNot(contains('demo-code')));
         expect(logs.join(), isNot(contains('access-token')));
-        final freshLocal = AuthLocalDataSource(credentials);
+        final freshLocal = PersistentIdentitySession(credentials);
         addTearDown(freshLocal.dispose);
         dio.httpClientAdapter = DemoAdapter(latency: Duration.zero);
+        dio.interceptors.removeWhere(
+          (interceptor) => interceptor is AuthInterceptor,
+        );
+        dio.interceptors.insert(
+          0,
+          AuthInterceptor(freshLocal, baseUrl: 'https://demo.invalid'),
+        );
         final freshRepo = RemoteIdentityRepository(
-          AuthRemoteDataSource(AuthApi(dio)),
+          AuthRemoteDataSource(dio),
           freshLocal,
-          OAuthRemoteDataSource(AuthApi(dio), browser, config),
+          BrowserOAuthRemoteDataSource(
+            AuthRemoteDataSource(dio),
+            browser,
+            config,
+          ),
         );
         expect(await freshRepo.restoreSession(), isA<Success<User?>>());
         expect(freshRepo.session.user?.email, '${provider.name}@example.com');
@@ -164,6 +176,40 @@ void main() {
   });
 
   test(
+    'logout keeps provider admission occupied until the browser returns',
+    () async {
+      final opened = Completer<void>();
+      final resume = Completer<void>();
+      var calls = 0;
+      final repo = repository(
+        overrideBrowser: CallbackOAuthBrowser((authorization, redirect) async {
+          if (++calls == 1) {
+            opened.complete();
+            await resume.future;
+          }
+          return browser.authenticate(authorization, redirect);
+        }),
+      );
+      final login = LoginWithProvider(repo);
+      final first = login(IdentityProvider.google);
+      await opened.future;
+      await repo.logout();
+      final second = await login(IdentityProvider.github);
+      expect(
+        (second as FailureResult<User>).failure.kind,
+        FailureKind.conflict,
+      );
+      expect(calls, 1);
+      resume.complete();
+      expect(
+        ((await first) as FailureResult<User>).failure.kind,
+        FailureKind.cancelled,
+      );
+      expect(await login(IdentityProvider.github), isA<Success<User>>());
+    },
+  );
+
+  test(
     'storage errors cannot publish an authenticated OAuth session',
     () async {
       credentials.failWrites = true;
@@ -177,7 +223,7 @@ void main() {
   test(
     'broker consumes codes once and validates the verifier and provider',
     () async {
-      final api = AuthApi(dio);
+      final api = AuthRemoteDataSource(dio);
       Future<OAuthExchangeRequest> authorize() async {
         final attempt = OAuthAttempt(redirectUri: config.redirectUri!);
         return attempt.exchangeRequest(

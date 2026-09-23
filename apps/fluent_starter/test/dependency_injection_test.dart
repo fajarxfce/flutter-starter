@@ -22,10 +22,13 @@ void main() {
         preferences: FakePreferenceStore(),
       );
       addTearDown(container.reset);
-      expect(container<AuthApi>(), same(container<AuthApi>()));
       expect(
         container<AuthRemoteDataSource>(),
         same(container<AuthRemoteDataSource>()),
+      );
+      expect(
+        container<IdentitySession>(),
+        same(container<HttpAuthentication>(instanceName: mainApi)),
       );
       final repository = container<IdentityRepository>();
       expect(repository, isA<RemoteIdentityRepository>());

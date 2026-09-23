@@ -3,11 +3,11 @@
 Password, Google and GitHub all produce the same `Session` in `identity_domain`.
 `LoginBloc` depends on `Login` and `LoginWithProvider`; home and navigation observe
 `WatchSession` and read `GetCurrentSession`. Features never share a Bloc. Identity
-data owns the repository, browser adapter, Retrofit API and credential persistence.
+data owns the repository, browser adapter, Retrofit datasource and session persistence.
 Its Injectable micro-package registers the domain use cases. `LoginWithProvider`
 checks provider availability and admits one authorization at a time. It is shared
 per DI container so multiple callers cannot invalidate an active attempt. The
-repository only fetches and saves; route Blocs own presentation loading state.
+repository maps datasource results and delegates session lifecycle to `IdentitySession`; route Blocs own presentation loading state.
 
 ## Demo
 
