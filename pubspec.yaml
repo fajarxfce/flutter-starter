@@ -24,7 +24,7 @@ melos:
   scripts:
     generate:
       exec:
-        command: dart run build_runner build --delete-conflicting-outputs
+        command: dart run build_runner build
         concurrency: 1
         orderDependents: true
       packageFilters:
@@ -32,9 +32,9 @@ melos:
     analyze:
       run: flutter analyze --fatal-infos
     format:
-      run: dart format apps packages tool
+      run: dart format apps packages tool test
     format-check:
-      run: dart format --output=none --set-exit-if-changed apps packages tool
+      run: dart format --output=none --set-exit-if-changed apps packages tool test
     architecture:
       run: dart run tool/check_architecture.dart
     test:
