@@ -2,6 +2,13 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Android incremental output recovery
+
+- Investigated a reported `:jni:bundleLibRuntimeToDirDebug` failure where `JniPlugin.class` already existed for a `NEW` incremental change. The reported `/home/fajar/Documents/flutter-gg/flutter-starter` checkout is not present on this host. The error did not reproduce in the VPS checkout; an initial dev debug APK build passed with the existing configuration.
+- Verified the documented recovery sequence on the VPS: stopped the Gradle daemon, ran `flutter clean` inside `apps/fluent_starter`, moved the app's project-local `android/.gradle` cache to a temporary backup, and ran `flutter pub get --enforce-lockfile`. The dependency lockfile remained unchanged. The clean dev debug APK build passed, followed by another successful incremental build without cleanup.
+- Checked the public plugin metadata and changelog: stable `flutter_web_auth_2` remains at 5.1.0 and still applies legacy KGP; Built-in Kotlin migration is available in 6.0.0 alpha releases. The KGP warning remains expected and is independent of the reported class-copy failure. No dependency or functional Gradle setting was changed; compatibility comments and `docs/android-builds.md` document the current state.
+- No application source changed, so the passing 207-test workspace suite was not repeated. The failing machine's local cache still needs the documented recovery; its original error cannot be claimed resolved by the VPS build results.
+
 ## Reusable Fluent design system
 
 - Added a catalog of **35 `AppXxx` widgets**, each in its own file, covering typography, actions, form fields, typed selection, date/time pickers, layout, display, feedback and dialogs. The package remains independent of feature/domain code, Bloc, DI and navigation. Components render values and callbacks while Fluent owns native focus/editing/animation behavior.
