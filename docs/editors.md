@@ -54,4 +54,15 @@ Configuration files: `.zed/debug.json`, `.zed/tasks.json`, and `.zed/settings.js
 
 Both editors expose dependency bootstrap, locked pub get, code generation, the complete quality gate, analysis, formatting, all tests, flavor regeneration, device listing, Flutter doctor, and the Linux keyring integration test.
 
+| Maintenance task in either editor | Melos command from the repository root |
+|---|---|
+| `Workspace: Pub get (locked)` | `dart run melos run pub:get --no-select` |
+| `App: Clean` | `dart run melos run app:clean --no-select` |
+| `App: Clean + pub get (locked)` | `dart run melos run app:refresh --no-select` |
+| `Android: Reset build cache + pub get` | `dart run melos run android:reset --no-select` |
+
+`pub:get` resolves the shared workspace lockfile from `apps/fluent_starter`, so Flutter also refreshes the app's plugin metadata. The editor pub-get task invokes Flutter directly, allowing initial setup before Melos is available. `app:clean` targets Flutter's generated app outputs; Melos's built-in `clean` command removes package metadata and serves a different purpose. `app:refresh` runs clean and locked pub get sequentially.
+
+For the Android JNI incremental-output error, choose the Android reset task: it stops Gradle, cleans the app, backs up its project-local Gradle cache and restores dependencies in order. The editor invokes the dependency-free `tool/reset_android.dart` script directly; Melos wraps the same script. See [Android build recovery](android-builds.md) for backup locations and troubleshooting. Stop active builds/debug sessions before cleaning. Tasks execute where the checkout is open, including on the server for remote workspaces.
+
 Generation is an explicit task; launching the debugger does not regenerate the whole workspace. Use `Workspace: Generate` after changing annotations and `Workspace: Check` before committing. Linux integration requires its Linux host dependencies; Apple and Windows builds require their respective hosts/toolchains. See the platform matrix in [README](../README.md#platforms-and-build-verification).

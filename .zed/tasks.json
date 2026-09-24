@@ -136,6 +136,44 @@
       "get",
       "--enforce-lockfile"
     ],
+    "cwd": "$ZED_WORKTREE_ROOT/apps/fluent_starter",
+    "allow_concurrent_runs": false,
+    "save": "all"
+  },
+  {
+    "label": "App: Clean",
+    "command": "dart",
+    "args": [
+      "run",
+      "melos",
+      "run",
+      "app:clean",
+      "--no-select"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "save": "all"
+  },
+  {
+    "label": "App: Clean + pub get (locked)",
+    "command": "dart",
+    "args": [
+      "run",
+      "melos",
+      "run",
+      "app:refresh",
+      "--no-select"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "save": "all"
+  },
+  {
+    "label": "Android: Reset build cache + pub get",
+    "command": "dart",
+    "args": [
+      "tool/reset_android.dart"
+    ],
     "cwd": "$ZED_WORKTREE_ROOT",
     "allow_concurrent_runs": false,
     "save": "all"

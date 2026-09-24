@@ -2,6 +2,13 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Editor and Melos maintenance tasks
+
+- Added `pub:get`, `app:clean`, `app:refresh` and `android:reset` scripts with matching VS Code/Zed task entries. Locked dependency resolution and Flutter cleaning target `apps/fluent_starter`. Android reset uses one standalone Dart script to stop Gradle, clean app output, preserve the project cache in an ignored backup, and restore locked dependencies.
+- Executed `pub:get`, `app:refresh` and `android:reset` through Melos successfully. Refresh ran clean before pub get; reset stopped the daemon and backed up `android/.gradle`. The workspace lockfile and generated Dart sources remained unchanged. A dev debug APK build after reset passed in 62.6 seconds on the VPS.
+- The full workspace quality gate passed formatting, dependency policy, architecture checks, analysis and **212 tests**. Five new CLI tests exercise a checkout path containing spaces from an unrelated working directory, successful backup, fail-fast behavior on Gradle/Flutter cleanup errors, retained backups on dependency-resolution failure, and an absent Gradle cache. These tests use fake executables and no workspace package resolution.
+- Parsed both task configurations: all 28 VS Code and 59 Zed task labels are unique; maintenance commands and working directories match their intended targets. Editor UI interaction and native Windows execution were not exercised. The laptop's original build failure still needs verification in its own checkout; the reset does not migrate the existing legacy KGP plugin.
+
 ## Android incremental output recovery
 
 - Investigated a reported `:jni:bundleLibRuntimeToDirDebug` failure where `JniPlugin.class` already existed for a `NEW` incremental change. The reported `/home/fajar/Documents/flutter-gg/flutter-starter` checkout is not present on this host. The error did not reproduce in the VPS checkout; an initial dev debug APK build passed with the existing configuration.

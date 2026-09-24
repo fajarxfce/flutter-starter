@@ -34,6 +34,8 @@ dart run tool/app.dart run linux dev --api=https://api.example.com
 
 VS Code and Zed configurations include flavor-aware app debugging, run/build tasks, code generation, and workspace checks. Open the repository root and follow [the editor guide](docs/editors.md) for device selection, API backends, profiling, and task shortcuts.
 
+Maintenance tasks are available in both editors and Melos: `pub:get` restores locked dependencies, `app:clean` cleans Flutter app outputs, `app:refresh` runs clean then pub get, and `android:reset` also stops Gradle and backs up its project cache. Run one from the repository root, for example `dart run melos run app:refresh --no-select`.
+
 ## Architecture
 
 ```text

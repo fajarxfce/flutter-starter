@@ -25,6 +25,28 @@ dev_dependencies:
   test: any
 melos:
   scripts:
+    pub:get:
+      description: Resolve locked workspace dependencies and regenerate app plugin files.
+      exec:
+        command: flutter pub get --enforce-lockfile
+        concurrency: 1
+      packageFilters:
+        scope: fluent_starter
+    app:clean:
+      description: Clean generated Flutter output in apps/fluent_starter.
+      exec:
+        command: flutter clean
+        concurrency: 1
+      packageFilters:
+        scope: fluent_starter
+    app:refresh:
+      description: Clean the app and restore locked dependencies in order.
+      steps:
+        - app:clean
+        - pub:get
+    android:reset:
+      description: Stop Gradle, clean the app, back up its Gradle cache, and restore dependencies.
+      run: dart tool/reset_android.dart
     generate:
       steps:
         - generate:build

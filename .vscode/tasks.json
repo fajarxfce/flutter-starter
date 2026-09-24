@@ -158,9 +158,62 @@
         "--enforce-lockfile"
       ],
       "options": {
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder}/apps/fluent_starter"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "App: Clean",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "melos",
+        "run",
+        "app:clean",
+        "--no-select"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "label": "App: Clean + pub get (locked)",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "run",
+        "melos",
+        "run",
+        "app:refresh",
+        "--no-select"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "label": "Android: Reset build cache + pub get",
+      "type": "shell",
+      "command": "dart",
+      "args": [
+        "tool/reset_android.dart"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      }
     },
     {
       "label": "Workspace: Bootstrap",
