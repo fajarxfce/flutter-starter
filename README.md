@@ -102,7 +102,9 @@ core/identity/data/lib/
   src/models/auth_session.dart
   src/session/identity_session.dart
   src/session/persistent_identity_session.dart
+  src/services/auth_api.dart
   src/datasources/remote/auth_remote_data_source.dart
+  src/datasources/remote/api_auth_remote_data_source.dart
   src/datasources/demo/demo_adapter.dart
   src/mappers/user_mapper.dart
   src/mappers/auth_session_mapper.dart
@@ -178,7 +180,7 @@ Adding a use case to an existing feature changes that feature's bindings and gen
 
 The main client uses JSON content type and explicit connection/send/receive timeouts. Core/network attaches its named auth and logging interceptors. Authentication headers are restricted to the API origin. Endpoints marked `@Extra({'authenticated': false})`, including password login and OAuth exchange, bypass authentication. Protected requests without credentials fail locally; a protected HTTP 401 expires only the session used by that request. Logging exposes only method/status/error category. Generated disposal closes the router, shared Blocs, identity session owner, and Dio transport when the container is reset. The session owner waits for pending credential writes and cleanup before closing its stream.
 
-`AuthRemoteDataSource` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. `@Named(mainApi)` selects its Dio instance. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module. The demo-session repository selects the same named client.
+`AuthApi` uses `@lazySingleton` and `@factoryMethod` directly on its Retrofit factory. `@Named(mainApi)` selects its Dio instance. Its optional `baseUrl` is marked `@ignoreParam` so DI uses Dio's configured API origin without a separate API provider module. `ApiAuthRemoteDataSource` injects this service and is registered as `AuthRemoteDataSource` using `@LazySingleton(as: AuthRemoteDataSource)`. The demo-session repository selects the same named client.
 
 Each client owns its `BaseOptions`, adapter, and interceptor instances. There is no `NetworkConfig` wrapper or unqualified Dio registration. The starter configures one backend client. To add another backend:
 
@@ -245,7 +247,7 @@ return _session.authenticate(
 
 `IdentitySession` owns a complete session operation. Its implementation uses `networkBoundResource` to commit only validated responses, `CancelableOperation` to discard superseded results, `Lock` to order credential writes/cleanup, and `BehaviorSubject` to replay the current session to observers. These are internal data-layer mechanisms; the repository has no operation IDs, counters, credential checks or HTTP status handling. Provider availability and admission policy stay in domain use cases.
 
-`CredentialStore` is the local datasource contract; `AuthRemoteDataSource` is the abstract Retrofit datasource with a generated implementation. `OAuthRemoteDataSource` has a separate browser implementation. Neither datasource owns runtime session state. There is no forwarding wrapper around another identical HTTP API.
+`CredentialStore` is the local datasource contract. `AuthRemoteDataSource` is a plain interface for password login and user lookup; `ApiAuthRemoteDataSource` implements it using the Retrofit `AuthApi` service. `OAuthRemoteDataSource` has a separate browser implementation that uses `AuthApi` for code exchange. HTTP annotations and Dio options stay in the API service. Neither datasource owns runtime session state.
 
 `AuthInterceptor` consumes `HttpAuthentication`, supplied by the same session owner used by the repository. Network does not import identity or presentation. The session owner has no Dio dependency, so this wiring cannot recurse through the HTTP client. Logout publishes a signed-out state immediately and waits for credential cleanup. A cancelled write's cleanup completes under the same lock before any newer write can commit. See [session boundaries and concurrency](docs/identity-session.md).
 

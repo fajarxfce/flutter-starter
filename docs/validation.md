@@ -2,6 +2,12 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## API service and remote datasource separation
+
+- Moved the Retrofit contract and generated HTTP implementation to `src/services/auth_api.dart` and `auth_api.g.dart`. `AuthRemoteDataSource` is a plain interface without Retrofit annotations or Dio types; `ApiAuthRemoteDataSource` implements it using `AuthApi`. Browser OAuth uses the same API service for code exchange, and the repository depends on datasource contracts.
+- Regenerated Injectable and Retrofit output. The generated HTTP implementation differs from the previous version only in class and part names. The named `mainApi` binding, endpoint behavior and session handling remain covered by the existing integration-style repository and DI tests.
+- The complete workspace quality gate passed formatting, dependency policy, architecture boundaries, analyzer and **191 tests**. No new dependencies or platform configuration were required. Native integrations and platform builds were not repeated for this boundary correction.
+
 ## Identity session and datasource boundaries
 
 - Removed the stateful `AuthLocalDataSource`. Local credential I/O uses the existing `CredentialStore` contract and platform implementations. `AuthRemoteDataSource` is the generated Retrofit contract; browser OAuth has a separate contract and implementation.

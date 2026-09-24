@@ -5,7 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:identity_data/identity_data.dart';
 import 'package:identity_data/src/datasources/demo/demo_oauth_browser.dart';
+import 'package:identity_data/src/datasources/remote/api_auth_remote_data_source.dart';
 import 'package:identity_data/src/datasources/remote/browser_oauth_remote_data_source.dart';
+import 'package:identity_data/src/services/auth_api.dart';
 import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart' show GetItHelper;
 import 'package:test/test.dart';
@@ -46,11 +48,12 @@ void main() {
     adapter = DemoAdapter(latency: Duration.zero);
     local = PersistentIdentitySession(store);
     dio = await createClient();
+    final api = AuthApi(dio);
     repository = RemoteIdentityRepository(
-      AuthRemoteDataSource(dio),
+      ApiAuthRemoteDataSource(api),
       local,
       BrowserOAuthRemoteDataSource(
-        AuthRemoteDataSource(dio),
+        api,
         DemoOAuthBrowser(dio),
         OAuthConfiguration(apiOrigin: Uri.parse('https://demo.invalid')),
       ),
@@ -141,7 +144,7 @@ void main() {
     final logs = <String>[];
     dio.close();
     dio = await createClient(log: logs.add);
-    final api = AuthRemoteDataSource(dio);
+    final api = AuthApi(dio);
     await api.login(
       const LoginRequest(email: 'demo@example.com', password: 'Demo123!'),
     );

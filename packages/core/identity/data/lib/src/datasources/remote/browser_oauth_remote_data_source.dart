@@ -1,9 +1,9 @@
 import 'package:identity_data/src/config/oauth_configuration.dart';
-import 'package:identity_data/src/datasources/remote/auth_remote_data_source.dart';
 import 'package:identity_data/src/datasources/remote/oauth_remote_data_source.dart';
 import 'package:identity_data/src/oauth/oauth_attempt.dart';
 import 'package:identity_data/src/oauth/oauth_browser.dart';
 import 'package:identity_data/src/responses/login_response.dart';
+import 'package:identity_data/src/services/auth_api.dart';
 import 'package:identity_domain/identity_domain.dart';
 import 'package:injectable/injectable.dart';
 
@@ -11,7 +11,7 @@ import 'package:injectable/injectable.dart';
 final class BrowserOAuthRemoteDataSource implements OAuthRemoteDataSource {
   BrowserOAuthRemoteDataSource(this._api, this._browser, this._configuration);
 
-  final AuthRemoteDataSource _api;
+  final AuthApi _api;
   final OAuthBrowser _browser;
   final OAuthConfiguration _configuration;
 

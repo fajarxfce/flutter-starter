@@ -11,6 +11,8 @@ import 'package:core_network/core_network.dart' as _i309;
 import 'package:dio/dio.dart' as _i361;
 import 'package:identity_data/di/injection.dart' as _i439;
 import 'package:identity_data/src/config/oauth_configuration.dart' as _i356;
+import 'package:identity_data/src/datasources/remote/api_auth_remote_data_source.dart'
+    as _i72;
 import 'package:identity_data/src/datasources/remote/auth_remote_data_source.dart'
     as _i484;
 import 'package:identity_data/src/datasources/remote/browser_oauth_remote_data_source.dart'
@@ -22,6 +24,7 @@ import 'package:identity_data/src/repositories/adapter_demo_session_repository.d
     as _i345;
 import 'package:identity_data/src/repositories/remote_identity_repository.dart'
     as _i572;
+import 'package:identity_data/src/services/auth_api.dart' as _i579;
 import 'package:identity_data/src/session/identity_session.dart' as _i15;
 import 'package:identity_data/src/session/persistent_identity_session.dart'
     as _i442;
@@ -43,8 +46,8 @@ class IdentityDataPackageModule extends _i526.MicroPackageModule {
       () => _i442.PersistentIdentitySession(gh<_i699.CredentialStore>()),
       dispose: (i) => i.dispose(),
     );
-    gh.lazySingleton<_i484.AuthRemoteDataSource>(
-      () => _i484.AuthRemoteDataSource(gh<_i361.Dio>(instanceName: 'mainApi')),
+    gh.lazySingleton<_i579.AuthApi>(
+      () => _i579.AuthApi(gh<_i361.Dio>(instanceName: 'mainApi')),
     );
     gh.lazySingleton<_i516.DemoSessionRepository>(
       () => _i345.AdapterDemoSessionRepository(
@@ -57,15 +60,18 @@ class IdentityDataPackageModule extends _i526.MicroPackageModule {
       ),
       instanceName: 'mainApi',
     );
+    gh.factory<_i516.ExpireDemoSession>(
+      () => identityModule.expireDemoSession(gh<_i516.DemoSessionRepository>()),
+    );
+    gh.lazySingleton<_i484.AuthRemoteDataSource>(
+      () => _i72.ApiAuthRemoteDataSource(gh<_i579.AuthApi>()),
+    );
     gh.lazySingleton<_i163.OAuthRemoteDataSource>(
       () => _i51.BrowserOAuthRemoteDataSource(
-        gh<_i484.AuthRemoteDataSource>(),
+        gh<_i579.AuthApi>(),
         gh<_i79.OAuthBrowser>(),
         gh<_i356.OAuthConfiguration>(),
       ),
-    );
-    gh.factory<_i516.ExpireDemoSession>(
-      () => identityModule.expireDemoSession(gh<_i516.DemoSessionRepository>()),
     );
     gh.lazySingleton<_i15.IdentitySession>(
       () =>

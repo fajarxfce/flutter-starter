@@ -5,8 +5,9 @@
 | Domain | `Login`, `LoginWithProvider`, `Logout`, `RestoreSession` | User actions and provider availability/admission policy |
 | Domain | `IdentityRepository` | The identity API consumed by use cases |
 | Data repository | `RemoteIdentityRepository` | Select a datasource call, map DTOs, delegate a session operation |
-| Remote datasource | `AuthRemoteDataSource` | Abstract Retrofit contract with a generated HTTP implementation |
+| Remote datasource | `AuthRemoteDataSource` / `ApiAuthRemoteDataSource` | Password login and user lookup through the API service |
 | Remote datasource | `OAuthRemoteDataSource` / `BrowserOAuthRemoteDataSource` | Browser authorization, callback validation and code exchange |
+| API service | `AuthApi` | Retrofit endpoints, HTTP annotations, DTO serialization and the named Dio client |
 | Local datasource | `CredentialStore` / platform implementations in core/data | Read, write and delete credentials |
 | Session data | `IdentitySession` / `PersistentIdentitySession` | Current session, observation, restoration and consistent credential commits |
 | Network | `AuthInterceptor` / `HttpAuthentication` | Authenticate requests and report rejected request credentials |
@@ -17,11 +18,19 @@
 The previous stateful datasource has been removed. Datasources do not publish
 application session transitions; the session component owns those transitions.
 
+Remote datasource contracts contain no Retrofit annotations or Dio types.
+`ApiAuthRemoteDataSource` adapts password login and user lookup to `AuthApi`;
+`BrowserOAuthRemoteDataSource` coordinates browser authorization and uses the same
+API service for the code exchange. Repositories consume the datasource contracts.
+The generated HTTP implementation stays in `src/services/auth_api.g.dart`.
+
 ```mermaid
 flowchart LR
     UseCase[Domain use cases] --> Repo[IdentityRepository]
     Impl[RemoteIdentityRepository] -. implements .-> Repo
     Impl --> Remote[Datasource contracts]
+    DataSources[Datasource implementations] -. implements .-> Remote
+    DataSources --> API[AuthApi / Retrofit]
     Impl --> Session[IdentitySession]
     Persistent[PersistentIdentitySession] -. implements .-> Session
     Persistent --> Storage[CredentialStore]

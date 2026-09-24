@@ -6,8 +6,10 @@ import 'package:core_testing/core_testing.dart';
 import 'package:dio/dio.dart';
 import 'package:identity_data/identity_data.dart';
 import 'package:identity_data/src/datasources/demo/demo_oauth_browser.dart';
+import 'package:identity_data/src/datasources/remote/api_auth_remote_data_source.dart';
 import 'package:identity_data/src/datasources/remote/browser_oauth_remote_data_source.dart';
 import 'package:identity_data/src/oauth/oauth_attempt.dart';
+import 'package:identity_data/src/services/auth_api.dart';
 import 'package:identity_domain/identity_domain.dart';
 import 'package:test/test.dart';
 
@@ -55,10 +57,10 @@ void main() {
     OAuthBrowser? overrideBrowser,
     OAuthConfiguration? configuration,
   }) => RemoteIdentityRepository(
-    AuthRemoteDataSource(dio),
+    ApiAuthRemoteDataSource(AuthApi(dio)),
     local,
     BrowserOAuthRemoteDataSource(
-      AuthRemoteDataSource(dio),
+      AuthApi(dio),
       overrideBrowser ?? browser,
       configuration ?? config,
     ),
@@ -95,13 +97,9 @@ void main() {
           AuthInterceptor(freshLocal, baseUrl: 'https://demo.invalid'),
         );
         final freshRepo = RemoteIdentityRepository(
-          AuthRemoteDataSource(dio),
+          ApiAuthRemoteDataSource(AuthApi(dio)),
           freshLocal,
-          BrowserOAuthRemoteDataSource(
-            AuthRemoteDataSource(dio),
-            browser,
-            config,
-          ),
+          BrowserOAuthRemoteDataSource(AuthApi(dio), browser, config),
         );
         expect(await freshRepo.restoreSession(), isA<Success<User?>>());
         expect(freshRepo.session.user?.email, '${provider.name}@example.com');
@@ -223,7 +221,7 @@ void main() {
   test(
     'broker consumes codes once and validates the verifier and provider',
     () async {
-      final api = AuthRemoteDataSource(dio);
+      final api = AuthApi(dio);
       Future<OAuthExchangeRequest> authorize() async {
         final attempt = OAuthAttempt(redirectUri: config.redirectUri!);
         return attempt.exchangeRequest(
