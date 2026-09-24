@@ -17,9 +17,12 @@ void main() {
               size: Size(width, 640),
               textScaler: const TextScaler.linear(2),
             ),
-            child: const PageBody(
-              child: SectionCard(
-                child: BrandHeader(subtitle: 'A foundation for your next app.'),
+            child: const AppPageBody(
+              child: AppCard(
+                child: AppBrandHeader(
+                  title: 'Fluent Starter',
+                  subtitle: 'A foundation for your next app.',
+                ),
               ),
             ),
           ),

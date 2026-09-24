@@ -13,101 +13,90 @@ class LoginView extends StatelessWidget {
       final bloc = context.read<LoginBloc>();
       final busy = state.isSubmitting;
       return ScaffoldPage(
-        content: PageBody(
+        content: AppPageBody(
           maxWidth: 440,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: AppSpacing.page),
-              const BrandHeader(subtitle: 'Sign in to your workspace.'),
-              const SizedBox(height: AppSpacing.medium),
+              const AppGap(AppSpacing.page),
+              const AppBrandHeader(
+                title: 'Fluent Starter',
+                subtitle: 'Sign in to your workspace.',
+              ),
+              const AppGap(),
               Align(
                 alignment: Alignment.centerLeft,
-                child: EnvironmentBadge(label: state.environment),
+                child: AppBadge(
+                  label: state.environment,
+                  semanticsLabel: 'Environment: ${state.environment}',
+                ),
               ),
-              const SizedBox(height: AppSpacing.large),
-              SectionCard(
+              const AppGap(AppSpacing.large),
+              AppCard(
                 child: AutofillGroup(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      InfoLabel(
+                      AppTextField(
+                        key: const Key('login_email'),
                         label: 'Email address',
-                        child: TextBox(
-                          key: const Key('login_email'),
-                          enabled: !busy,
-                          placeholder: 'you@example.com',
-                          keyboardType: TextInputType.emailAddress,
-                          autofillHints: const [AutofillHints.username],
-                          textInputAction: TextInputAction.next,
-                          onChanged: (email) =>
-                              bloc.add(LoginEmailChanged(email)),
-                        ),
+                        enabled: !busy,
+                        errorText: state.emailError,
+                        placeholder: 'you@example.com',
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.username],
+                        textInputAction: TextInputAction.next,
+                        onChanged: (email) =>
+                            bloc.add(LoginEmailChanged(email)),
                       ),
-                      if (state.emailError != null) Text(state.emailError!),
-                      const SizedBox(height: AppSpacing.medium),
-                      InfoLabel(
+                      const AppGap(),
+                      AppPasswordField(
+                        key: const Key('login_password'),
                         label: 'Password',
-                        child: TextBox(
-                          key: const Key('login_password'),
-                          enabled: !busy,
-                          obscureText: true,
-                          placeholder: 'At least 8 characters',
-                          autofillHints: const [AutofillHints.password],
-                          textInputAction: TextInputAction.done,
-                          onChanged: (password) =>
-                              bloc.add(LoginPasswordChanged(password)),
-                          onSubmitted: (_) => bloc.add(const LoginSubmitted()),
-                        ),
+                        enabled: !busy,
+                        errorText: state.passwordError,
+                        placeholder: 'At least 8 characters',
+                        onChanged: (password) =>
+                            bloc.add(LoginPasswordChanged(password)),
+                        onSubmitted: (_) => bloc.add(const LoginSubmitted()),
                       ),
-                      if (state.passwordError != null)
-                        Text(state.passwordError!),
-                      const SizedBox(height: AppSpacing.large),
-                      FilledButton(
+                      const AppGap(AppSpacing.large),
+                      AppButton(
                         key: const Key('login_submit'),
+                        label: 'Sign in',
+                        isLoading: busy && state.activeProvider == null,
                         onPressed: busy
                             ? null
                             : () => bloc.add(const LoginSubmitted()),
-                        child: busy && state.activeProvider == null
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: ProgressRing(strokeWidth: 2),
-                              )
-                            : const Text('Sign in'),
                       ),
                       if (state.providers.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.medium),
-                        const Center(child: Text('or')),
-                        const SizedBox(height: AppSpacing.medium),
+                        const AppGap(),
+                        const Center(child: AppText('or')),
+                        const AppGap(),
                         for (final provider in state.providers)
                           Padding(
                             padding: const EdgeInsets.only(
                               bottom: AppSpacing.small,
                             ),
-                            child: Button(
+                            child: AppButton(
                               key: ValueKey('login_${provider.name}'),
+                              label: provider.label,
+                              variant: AppButtonVariant.secondary,
+                              isLoading: state.activeProvider == provider,
                               onPressed: busy
                                   ? null
                                   : () => bloc.add(
                                       LoginProviderSubmitted(provider),
                                     ),
-                              child: state.activeProvider == provider
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: ProgressRing(strokeWidth: 2),
-                                    )
-                                  : Text(provider.label),
                             ),
                           ),
                       ],
                       if (state.error != null) ...[
-                        const SizedBox(height: AppSpacing.medium),
-                        InfoBar(
-                          title: const Text('Unable to sign in'),
-                          content: Text(state.error!),
-                          severity: InfoBarSeverity.error,
+                        const AppGap(),
+                        AppInfoBar(
+                          title: 'Unable to sign in',
+                          message: state.error!,
+                          status: AppStatus.error,
                         ),
                       ],
                     ],
@@ -115,14 +104,13 @@ class LoginView extends StatelessWidget {
                 ),
               ),
               if (state.isDemo) ...[
-                const SizedBox(height: AppSpacing.large),
-                const InfoBar(
-                  title: Text('Demo workspace'),
-                  content: SelectableText(
-                    'Email: demo@example.com\nPassword: Demo123!\n'
-                    'Google and GitHub buttons use simulated demo accounts.',
-                  ),
-                  severity: InfoBarSeverity.info,
+                const AppGap(AppSpacing.large),
+                const AppInfoBar(
+                  title: 'Demo workspace',
+                  selectable: true,
+                  message:
+                      'Email: demo@example.com\nPassword: Demo123!\n'
+                      'Google and GitHub buttons use simulated demo accounts.',
                 ),
               ],
             ],

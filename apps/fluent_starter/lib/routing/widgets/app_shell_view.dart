@@ -18,7 +18,7 @@ class AppShellView extends StatelessWidget {
     builder: (context, constraints) => NavigationView(
       titleBar: const Padding(
         padding: EdgeInsets.all(16),
-        child: Text('Fluent Starter'),
+        child: AppText('Fluent Starter'),
       ),
       paneBodyBuilder: (_, _) => child,
       pane: NavigationPane(
@@ -30,12 +30,12 @@ class AppShellView extends StatelessWidget {
         items: [
           PaneItem(
             icon: const Icon(FluentIcons.home),
-            title: const Text('Overview'),
+            title: const AppText('Overview'),
             body: const SizedBox.shrink(),
           ),
           PaneItem(
             icon: const Icon(FluentIcons.settings),
-            title: const Text('Preferences'),
+            title: const AppText('Preferences'),
             body: const SizedBox.shrink(),
           ),
         ],

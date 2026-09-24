@@ -2,6 +2,14 @@
 
 Latest validation on Linux on 2026-09-24 using Flutter 3.47.5 and Dart 3.13.4.
 
+## Reusable Fluent design system
+
+- Added a catalog of **35 `AppXxx` widgets**, each in its own file, covering typography, actions, form fields, typed selection, date/time pickers, layout, display, feedback and dialogs. The package remains independent of feature/domain code, Bloc, DI and navigation. Components render values and callbacks while Fluent owns native focus/editing/animation behavior.
+- Migrated login, home, preferences and shell text to the shared components. Replaced the old page/card/brand/environment widget names. Central tokens, theme resources, accessible labels, validation announcements, loading suppression and responsive text wrapping live in the design system.
+- The full workspace quality gate passed formatting, centralized dependency policy, architecture boundaries, analyzer and **207 tests**. The 18 design-system tests include keyboard/mouse behavior, controlled values, text persistence across rebuilds, password visibility, disabled dropdown choices, progress semantics, contrast-sensitive theme foregrounds, and the component catalog at 320/1280 logical pixels with 200% text in both themes. Dialog actions also passed the compact layout check.
+- Web release build passed, including Flutter's Wasm compilation dry run. Linux native integration passed all **three** methods (password, Google demo, GitHub demo), including secure-store restoration with a fresh DI container and logout using the migrated UI.
+- No dependency, generated-code or platform configuration changes were required. Android and Apple/Windows native builds were not repeated for this component work. Component APIs and usage are documented in `docs/design-system.md`.
+
 ## API service and remote datasource separation
 
 - Moved the Retrofit contract and generated HTTP implementation to `src/services/auth_api.dart` and `auth_api.g.dart`. `AuthRemoteDataSource` is a plain interface without Retrofit annotations or Dio types; `ApiAuthRemoteDataSource` implements it using `AuthApi`. Browser OAuth uses the same API service for code exchange, and the repository depends on datasource contracts.

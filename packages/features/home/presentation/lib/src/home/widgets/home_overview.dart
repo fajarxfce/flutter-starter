@@ -21,52 +21,54 @@ class HomeOverview extends StatelessWidget {
   final VoidCallback onCheckSession;
   final VoidCallback onLogout;
   final VoidCallback? onExpireDemoSession;
+
   @override
-  Widget build(BuildContext context) => PageBody(
+  Widget build(BuildContext context) => AppPageBody(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Welcome, $displayName',
-          style: FluentTheme.of(context).typography.titleLarge,
-        ),
-        const SizedBox(height: AppSpacing.small),
-        Text(email),
-        const SizedBox(height: AppSpacing.medium),
+        AppPageHeader(title: 'Welcome, $displayName', subtitle: email),
+        const AppGap(),
         Align(
           alignment: Alignment.centerLeft,
-          child: EnvironmentBadge(label: environment),
+          child: AppBadge(
+            label: environment,
+            semanticsLabel: 'Environment: $environment',
+          ),
         ),
-        const SizedBox(height: AppSpacing.large),
-        const SectionCard(
-          child: BrandHeader(
+        const AppGap(AppSpacing.large),
+        const AppCard(
+          child: AppBrandHeader(
+            title: 'Fluent Starter',
             subtitle: 'Your workspace is ready. Make it your own.',
           ),
         ),
-        const SizedBox(height: AppSpacing.large),
+        const AppGap(AppSpacing.large),
         Wrap(
           spacing: AppSpacing.medium,
           runSpacing: AppSpacing.medium,
           children: [
-            FilledButton(
+            AppButton(
+              label: 'Check session',
               onPressed: busy ? null : onCheckSession,
-              child: const Text('Check session'),
             ),
-            Button(
+            AppButton(
               key: const Key('logout'),
+              label: 'Sign out',
+              variant: AppButtonVariant.secondary,
               onPressed: busy ? null : onLogout,
-              child: const Text('Sign out'),
             ),
             if (onExpireDemoSession != null)
-              Button(
+              AppButton(
+                label: 'Expire demo session',
+                variant: AppButtonVariant.secondary,
                 onPressed: busy ? null : onExpireDemoSession,
-                child: const Text('Expire demo session'),
               ),
           ],
         ),
         if (message != null) ...[
-          const SizedBox(height: AppSpacing.medium),
-          InfoBar(title: const Text('Session'), content: Text(message!)),
+          const AppGap(),
+          AppInfoBar(title: 'Session', message: message!),
         ],
       ],
     ),

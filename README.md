@@ -2,6 +2,10 @@
 
 A Flutter monorepo with enforced clean architecture, feature packages, Microsoft-style Fluent UI, and a working authentication example.
 
+The [design system catalog](docs/design-system.md) documents 35 reusable `AppXxx`
+widgets, including buttons, typography, fields, dropdowns, pickers, dialogs,
+layout and feedback components. Login, home and preferences use the shared widgets.
+
 ## Quick start
 
 Install **Flutter 3.47.5 / Dart 3.13.4** (`.fvmrc` pins Flutter). With FVM, run `fvm install` and use its Flutter/Dart binaries. All commands below run from the repository root with the pinned SDK on `PATH`.

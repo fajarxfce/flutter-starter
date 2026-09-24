@@ -7,43 +7,37 @@ import 'package:settings_presentation/src/appearance/bloc/appearance_state.dart'
 
 class AppearanceView extends StatelessWidget {
   const AppearanceView({super.key});
-
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<AppearanceBloc, AppearanceState>(
-        builder: (context, state) => PageBody(
+        builder: (context, state) => AppPageBody(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Preferences',
-                style: FluentTheme.of(context).typography.title,
-              ),
-              const SizedBox(height: AppSpacing.large),
-              InfoLabel(
+              const AppPageHeader(title: 'Preferences'),
+              const AppGap(AppSpacing.large),
+              AppDropdown<ThemeMode>(
+                key: const Key('appearance_theme'),
                 label: 'Appearance',
-                child: ComboBox<ThemeMode>(
-                  key: const Key('appearance_theme'),
-                  value: state.mode,
-                  items: const [
-                    ComboBoxItem(
-                      value: ThemeMode.system,
-                      child: Text('Use system setting'),
-                    ),
-                    ComboBoxItem(value: ThemeMode.light, child: Text('Light')),
-                    ComboBoxItem(value: ThemeMode.dark, child: Text('Dark')),
-                  ],
-                  onChanged: (mode) => context.read<AppearanceBloc>().add(
-                    AppearanceThemeSelected(mode),
+                value: state.mode,
+                options: const [
+                  AppSelectOption(
+                    value: ThemeMode.system,
+                    label: 'Use system setting',
                   ),
+                  AppSelectOption(value: ThemeMode.light, label: 'Light'),
+                  AppSelectOption(value: ThemeMode.dark, label: 'Dark'),
+                ],
+                onChanged: (mode) => context.read<AppearanceBloc>().add(
+                  AppearanceThemeSelected(mode),
                 ),
               ),
               if (state.error != null) ...[
-                const SizedBox(height: AppSpacing.medium),
-                InfoBar(
-                  title: const Text('Appearance'),
-                  content: Text(state.error!),
-                  severity: InfoBarSeverity.warning,
+                const AppGap(),
+                AppInfoBar(
+                  title: 'Appearance',
+                  message: state.error!,
+                  status: AppStatus.warning,
                 ),
               ],
             ],
