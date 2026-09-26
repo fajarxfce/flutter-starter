@@ -38,6 +38,11 @@ Maintenance tasks are available in both editors and Melos: `pub:get` restores lo
 
 ## Architecture
 
+See the [architecture rules](docs/architecture-rules.md) for layer ownership,
+datasource/repository/use-case orchestration, safe-call boundaries, and explicit
+SDK-result mapping. [AGENTS.md](AGENTS.md) applies these conventions to coding
+agent work in this repository.
+
 ```text
 apps/fluent_starter                 composition, router, platform runners
 packages/core/common               pure Dart Result/Failure and storage ports
@@ -213,6 +218,12 @@ final result = await safeApiCall(
 ```
 
 Transport, checked JSON decoding, and DTO-to-domain mapping inside the callback share the same error boundary. Synchronous exceptions, asynchronous failures, nullable values, and `void` results are supported.
+
+The wrapper maps exceptions. Returned values such as `false`, `null`, or a status
+enum still need interpretation according to that operation's contract. Keep
+source-specific result mapping in the repository or a named data mapper and
+application policy in the use case; see [safe calls and explicit result
+mapping](docs/architecture-rules.md#safe-calls-and-explicit-result-mapping).
 
 `mapNetworkFailure` exhaustively handles all **nine** exception types in Dio 5.11.1. Adding a Dio enum value requires updating the switch at compile time.
 
